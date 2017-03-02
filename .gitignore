@@ -1,0 +1,9 @@
+frontend/elm-stuff
+frontend/node_modules
+frontend/dist
+backend/.stack-work
+backend/.cabal-sandbox
+backend/cabal.sandbox.config
+backend/dist
+*.swp
+*.log

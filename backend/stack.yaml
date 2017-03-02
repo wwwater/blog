@@ -1,0 +1,41 @@
+# For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
+
+# Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
+resolver: lts-5.3
+
+# Local packages, usually specified by relative directory name
+packages:
+- '.'
+
+# Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
+extra-deps: []
+
+
+# Override default flag values for local packages and extra-deps
+flags: {}
+
+# Extra package databases containing global packages
+extra-package-dbs: []
+
+docker:
+  enable: true
+
+image:
+  # YOU NEED A `container` YAML SECTION FOR `stack image container`
+  container:
+    # YOU NEED A BASE IMAGE NAME. STACK LAYERS EXES ON TOP OF
+    # THE BASE IMAGE. PREPARE YOUR PROJECT IMAGE IN ADVANCE. PUT
+    # ALL YOUR RUNTIME DEPENDENCIES IN THE IMAGE.
+    base: fpco/stack-run
+    # YOU CAN OPTIONALY NAME THE IMAGE. STACK WILL USE THE PROJECT
+    # DIRECTORY NAME IF YOU LEAVE OUT THIS OPTION.
+    name: cyclinginthewind-backend
+    # OPTIONALLY ADD A HASH OF LOCAL PROJECT DIRECTORIES AND THEIR
+    # DESTINATIONS INSIDE THE DOCKER IMAGE.
+    #add:
+    #  man/: /usr/local/share/man/
+    # OPTIONALLY SPECIFY A LIST OF EXECUTABLES. STACK WILL CREATE
+    # A TAGGED IMAGE FOR EACH IN THE LIST. THESE IMAGES WILL HAVE
+    # THEIR RESPECTIVE "ENTRYPOINT" SET.
+    #entrypoints:
+    #  - stack
