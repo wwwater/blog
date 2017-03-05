@@ -7,7 +7,6 @@ import Html.Attributes exposing (class, href, style)
 import Html.Events exposing (onClick)
 import Http
 
-
 type alias Model =
     { post : Maybe Post
     }
@@ -55,17 +54,20 @@ view model =
                 , ("display", "flex")
                 , ("justify-content", "center")
                 , ("width", "100vw")
-                , ("min-height", "100vh") ] ] 
+                , ("min-height", "100vh") ] ]
         [ case model.post of
             Just post ->
                 div [ style [ ("padding", "32px")
                             , ("margin", "32px")
                             , ("width", "800px")
                             , ("background-color", "#333") ] ]
-                    [ h2 [ style [ ("color", "#ddd") ] ]
-                        [ text post.title ]
-                    , div [ style [ ("color", "#fff") ] ] 
-                        [ text post.content ]
+                    [ Routes.linkTo (Routes.EditPostPage (Maybe.withDefault 0 post.id))
+                        [ style [ ("color", "transparent") ] ]
+                        [ h2 [ style [ ("color", "#ddd") ] ]
+                            [ text (Maybe.withDefault "" post.title) ]
+                        ]
+                    , div [ style [ ("color", "#fff") ] ]
+                        [ text (Maybe.withDefault "" post.content) ]
                     ]
             Nothing ->
                 h2 [ style [ ("color", "#fff")

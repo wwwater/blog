@@ -17,17 +17,22 @@ instance FromJSON M.Post
 
 
 type PostAPI =
-                               Get '[JSON] [M.Post]
+       Get '[JSON] [M.Post]
   :<|> Capture "postId" Int :> Get '[JSON] M.Post
+  :<|> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
 
 
 postServer :: Sql.Connection -> Server PostAPI
 postServer conn =
-  getAllPosts :<|> getPost
+  getAllPosts :<|> getPost :<|> updatePost
 
   where
     getAllPosts = liftIO $ S.selectAllPosts conn
     getPost postId = liftIOMaybeToEither err404 $ S.selectPost conn postId
+    updatePost post = liftIOMaybeToEither err404 $
+        case M.postId post of
+            Just postId -> S.updatePost conn post
+            Nothing -> S.insertPost conn post
 
 
 liftIOMaybeToEither ::  (MonadIO m) => a -> IO (Maybe b) -> EitherT a m b

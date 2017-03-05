@@ -12,7 +12,7 @@ data Comment = Comment
    } deriving (Eq, Show, Generic)
 
 data Post = Post
-   { postId :: Int
+   { postId :: Maybe Int
    , postTitle :: Maybe String
    , postContent :: Maybe String
    } deriving (Eq, Show, Generic)

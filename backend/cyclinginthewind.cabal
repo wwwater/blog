@@ -29,6 +29,7 @@ executable cyclinginthewind
     , servant-server
     , wai
     , wai-cors
+    , wai-extra
     , warp
     , sqlite-simple
     , containers

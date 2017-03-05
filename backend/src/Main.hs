@@ -8,6 +8,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
 import Network.Wai.Middleware.Cors
+import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
 import Control.Exception (bracket)
 import Database.SQLite.Simple as Sql
 
@@ -17,8 +18,8 @@ app conn = serve A.api (A.combinedServer conn)
 
 
 testConnect :: IO Sql.Connection
-testConnect = Sql.open ":memory:"
--- testConnect = Sql.open "blog.db"
+-- testConnect = Sql.open ":memory:"
+testConnect = Sql.open "blog.db"
 
 
 withTestConnection :: (Sql.Connection -> IO a) -> IO a
@@ -51,4 +52,4 @@ main :: IO ()
 main = do
   withTestConnection $ \conn ->  do
     B.bootstrapDB conn
-    run 8081 $ blogCors $ app conn
+    run 8081 $ logStdoutDev $ blogCors $ app conn

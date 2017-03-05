@@ -11,6 +11,8 @@ import Json.Decode as Json
 type Route
     = PostsPage
     | PostPage Int
+    | EditPostPage Int
+    | NewPostPage
 
 
 routeParser : Parser (Route -> a) a
@@ -18,6 +20,8 @@ routeParser =
     UrlParser.oneOf
         [ UrlParser.map PostsPage (s "")
         , UrlParser.map PostPage (s "post" </> int)
+        , UrlParser.map EditPostPage (s "edit" </> int)
+        , UrlParser.map NewPostPage (s "new")
         ]
 
 
@@ -33,9 +37,15 @@ encode route =
 
         PostsPage ->
             "/"
-        
+
         PostPage i ->
             "/post/" ++ toString i
+
+        EditPostPage i ->
+            "/edit/" ++ toString i
+
+        NewPostPage ->
+            "/new"
 
 
 

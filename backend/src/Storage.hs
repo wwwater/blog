@@ -24,15 +24,23 @@ selectAllPosts conn =
 
 selectPost :: Sql.Connection -> Int -> IO (Maybe M.Post)
 selectPost conn postId = do
-  result <- (Sql.query conn "select * from post where id = ?" (Sql.Only postId) :: IO [M.Post])
+  result <- (Sql.query conn "SELECT * FROM post WHERE id = ?" (Sql.Only postId) :: IO [M.Post])
   case (length result) of
       0 -> return Nothing
       _ -> return $ Just $ head result
 
-addPost :: Sql.Connection -> M.Post -> IO M.Post
-addPost conn post = do
-  Sql.execute conn "insert into post (title) values (?) " (Sql.Only $ M.postTitle post)
+insertPost :: Sql.Connection -> M.Post -> IO (Maybe M.Post)
+insertPost conn post = do
+  Sql.executeNamed conn "INSERT INTO post (title, content) VALUES (:title, :content) " [":title" := (M.postTitle post), ":content" := (M.postContent post)]
   rawId <- lastInsertRowId conn
-  let newPost = post { M.postId = fromIntegral rawId }
-  return newPost
+  let newPost = post { M.postId = Just $ fromIntegral rawId }
+  return (Just newPost)
+
+updatePost :: Sql.Connection -> M.Post -> IO (Maybe M.Post)
+updatePost conn post = do
+  Sql.executeNamed conn "UPDATE post SET title = :title, content = :content WHERE id = :id" [":id" := (M.postId post), ":title" := (M.postTitle post), ":content" := (M.postContent post)]
+  updated <- (Sql.query conn "SELECT * FROM post WHERE id = ?" (Sql.Only $ M.postId post) :: IO [M.Post])
+  case (length updated) of
+      0 -> return Nothing
+      _ -> return $ Just $ head updated
 

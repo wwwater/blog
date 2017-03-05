@@ -31,7 +31,7 @@ mountCmd =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
-        
+
         HandlePostsRetrieved res ->
             case res of
                 Result.Ok posts ->
@@ -57,7 +57,6 @@ view model =
         , ("display", "flex")
         , ("flex-direction", "col")
         , ("justify-content", "center")
-        , ("width", "100vw")
         , ("min-height", "100vh") ] ]
         [ div [ style [ ("width", "800px") ] ]
             (List.map postPanel model.posts)
@@ -68,12 +67,12 @@ postPanel : Post -> Html Msg
 postPanel post =
     div [ style [ ("padding", "32px")
                 , ("margin", "32px")
-                , ("background-color", "#333") ] ]            
-        [ Routes.linkTo (Routes.PostPage post.id) 
+                , ("background-color", "#333") ] ]
+        [ Routes.linkTo (Routes.PostPage (Maybe.withDefault 0 post.id))
             [ style [ ("color", "transparent") ] ]
             [ h2 [ style [ ("color", "#ddd") ] ]
-                [ text post.title ]
+                [ text (Maybe.withDefault "<no title>" post.title) ]
             ]
-        , div [ style [ ("color", "#fff") ] ] 
-            [ text post.content ]
+        , div [ style [ ("color", "#fff") ] ]
+            [ text (Maybe.withDefault "" post.content) ]
         ]

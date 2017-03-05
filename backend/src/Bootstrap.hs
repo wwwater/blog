@@ -15,7 +15,7 @@ bootstrapDB conn = do
 createSchema :: Sql.Connection -> IO ()
 createSchema conn = do
   executeDB "PRAGMA foreign_keys = ON"
-  executeDB "create table post (id integer primary key asc, title varchar2(255), content text)"
+  executeDB "CREATE TABLE IF NOT EXISTS post (id INTERGER PRIMARY KEY ASC, title VARCHAR2(255), content TEXT)"
 
   where
     executeDB = Sql.execute_ conn
@@ -32,4 +32,4 @@ populateSampleData conn = do
   mapM_ insertPost posts
 
   where
-    insertPost p = Sql.execute conn "insert into post (id, title, content) values (?, ?, ?)" p
+    insertPost p = Sql.execute conn "INSERT OR IGNORE INTO post (id, title, content) VALUES (?, ?, ?)" p

@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Posts
 import Post
+import EditPost
 import Routes exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -23,12 +24,14 @@ type alias Model =
     { route : Routes.Route
     , postsModel : Posts.Model
     , postModel : Post.Model
+    , editPostModel: EditPost.Model
     }
 
 
 type Msg
     = PostsMsg Posts.Msg
     | PostMsg Post.Msg
+    | EditPostMsg EditPost.Msg
     | Navigate String
     | UrlChange Navigation.Location
 
@@ -38,6 +41,7 @@ initialModel =
     { route = PostsPage
     , postsModel = Posts.init
     , postModel = Post.init
+    , editPostModel = EditPost.init
     }
 
 
@@ -58,7 +62,7 @@ update msg model =
             in
                 { model | postsModel = subMdl }
                     ! [ Cmd.map PostsMsg subCmd ]
-        
+
         PostMsg m ->
             let
                 ( subMdl, subCmd ) =
@@ -66,6 +70,14 @@ update msg model =
             in
                 { model | postModel = subMdl }
                     ! [ Cmd.map PostMsg subCmd ]
+
+        EditPostMsg m ->
+            let
+                ( subMdl, subCmd ) =
+                    EditPost.update m model.editPostModel
+            in
+                { model | editPostModel = subMdl }
+                    ! [ Cmd.map EditPostMsg subCmd ]
 
         UrlChange loc ->
             urlUpdate loc model
@@ -88,10 +100,18 @@ urlUpdate loc model =
             { model | route = route }
                 ! [ Cmd.map PostMsg <| Post.mountCmd postId ]
 
+        Just ((EditPostPage postId) as route) ->
+            { model | route = route }
+                ! [ Cmd.map EditPostMsg <| EditPost.mountCmd (Just postId) ]
+
+        Just (NewPostPage as route) ->
+            { model | route = route }
+                ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
+
 
 view : Model -> Html Msg
 view model = contentView model
-        
+
 
 
 contentView : Model -> Html Msg
@@ -99,6 +119,12 @@ contentView model =
     case model.route of
         PostsPage ->
             Html.map PostsMsg <| Posts.view model.postsModel
-        
+
         PostPage id ->
             Html.map PostMsg <| Post.view model.postModel
+
+        EditPostPage id ->
+            Html.map EditPostMsg <| EditPost.view model.editPostModel
+
+        NewPostPage ->
+            Html.map EditPostMsg <| EditPost.view model.editPostModel
