@@ -60,14 +60,26 @@ view model =
                 div [ style [ ("padding", "32px")
                             , ("margin", "32px")
                             , ("width", "800px")
+                            , ("display", "flex")
+                            , ("flex-direction", "column")
                             , ("background-color", "#333") ] ]
                     [ Routes.linkTo (Routes.EditPostPage (Maybe.withDefault 0 post.id))
                         [ style [ ("color", "transparent") ] ]
                         [ h2 [ style [ ("color", "#ddd") ] ]
                             [ text (Maybe.withDefault "" post.title) ]
                         ]
-                    , div [ style [ ("color", "#fff") ] ]
+                    , div [ style [ ("color", "#fff")
+                                  , ("flex-grow", "1")
+                                  ] ]
                         [ text (Maybe.withDefault "" post.content) ]
+                    , Routes.linkTo Routes.PostsPage [ style [ ("color", "#fff")
+                                                             , ("margin-left", "16px")
+                                                             , ("font-size", "18px")
+                                                             , ("align-self", "flex-end")
+                                                             ]
+                                                     , class "glyphicon glyphicon-home"
+                                                     ]
+                        []
                     ]
             Nothing ->
                 h2 [ style [ ("color", "#fff")

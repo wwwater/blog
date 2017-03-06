@@ -7,3 +7,4 @@ backend/cabal.sandbox.config
 backend/dist
 *.swp
 *.log
+*.db

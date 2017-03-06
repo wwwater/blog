@@ -74,5 +74,7 @@ postPanel post =
                 [ text (Maybe.withDefault "<no title>" post.title) ]
             ]
         , div [ style [ ("color", "#fff") ] ]
-            [ text (Maybe.withDefault "" post.content) ]
+            [ if (String.length (Maybe.withDefault "" post.content) > 200)
+                then text (String.left 200 (Maybe.withDefault "" post.content) ++ "...")
+                else text (Maybe.withDefault "" post.content) ]
         ]
