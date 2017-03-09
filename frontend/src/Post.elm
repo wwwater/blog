@@ -53,7 +53,6 @@ view model =
     div [ style [ ("background-color", "#777")
                 , ("display", "flex")
                 , ("justify-content", "center")
-                , ("width", "100vw")
                 , ("min-height", "100vh") ] ]
         [ case model.post of
             Just post ->
@@ -63,23 +62,30 @@ view model =
                             , ("display", "flex")
                             , ("flex-direction", "column")
                             , ("background-color", "#333") ] ]
-                    [ Routes.linkTo (Routes.EditPostPage (Maybe.withDefault 0 post.id))
-                        [ style [ ("color", "transparent") ] ]
-                        [ h2 [ style [ ("color", "#ddd") ] ]
-                            [ text (Maybe.withDefault "" post.title) ]
-                        ]
+                    [ h2 [ style [ ("color", "#ddd") ] ]
+                        [ text (Maybe.withDefault "" post.title) ]
                     , div [ style [ ("color", "#fff")
                                   , ("flex-grow", "1")
+                                  , ("text-align", "justify")
                                   ] ]
                         [ text (Maybe.withDefault "" post.content) ]
-                    , Routes.linkTo Routes.PostsPage [ style [ ("color", "#fff")
-                                                             , ("margin-left", "16px")
-                                                             , ("font-size", "18px")
-                                                             , ("align-self", "flex-end")
-                                                             ]
-                                                     , class "glyphicon glyphicon-home"
-                                                     ]
-                        []
+                    , div [ style [ ("font-size", "18px")
+                                  , ("align-self", "flex-end")
+                                  , ("margin-top", "16px")
+                                  ] ]
+                        [ Routes.linkTo (Routes.EditPostPage (Maybe.withDefault 0 post.id))
+                            [ style [ ("color", "#fff")
+                                    , ("margin-left", "16px")
+                                    ]
+                            , class "glyphicon glyphicon-pencil"
+                            ] []
+                        , Routes.linkTo Routes.PostsPage
+                            [ style [ ("color", "#fff")
+                                    , ("margin-left", "16px")
+                                    ]
+                            , class "glyphicon glyphicon-home"
+                            ] []
+                        ]
                     ]
             Nothing ->
                 h2 [ style [ ("color", "#fff")

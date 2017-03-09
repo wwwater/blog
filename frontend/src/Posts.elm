@@ -65,16 +65,19 @@ view model =
 
 postPanel : Post -> Html Msg
 postPanel post =
-    div [ style [ ("padding", "32px")
+    Routes.linkTo (Routes.PostPage (Maybe.withDefault 0 post.id))
+        [ style [ ("display", "block")
+                , ("padding", "32px")
+                , ("color", "transparent")
                 , ("margin", "32px")
-                , ("background-color", "#333") ] ]
-        [ Routes.linkTo (Routes.PostPage (Maybe.withDefault 0 post.id))
-            [ style [ ("color", "transparent") ] ]
-            [ h2 [ style [ ("color", "#ddd") ] ]
-                [ text (Maybe.withDefault "<no title>" post.title) ]
-            ]
-        , div [ style [ ("color", "#fff") ] ]
-            [ if (String.length (Maybe.withDefault "" post.content) > 200)
-                then text (String.left 200 (Maybe.withDefault "" post.content) ++ "...")
-                else text (Maybe.withDefault "" post.content) ]
+                , ("background-color", "#333") ]
+        ]
+        [ h2 [ style [ ("color", "#ddd") ] ]
+            [ text (Maybe.withDefault "<no title>" post.title) ]
+        , div [ style [ ("color", "#fff")
+                      , ("text-align", "justify") ] ]
+            [ let content = Maybe.withDefault "" post.content in
+                if (String.length content > 1000)
+                    then text (String.left 1000 content ++ "...")
+                    else text content ]
         ]

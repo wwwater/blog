@@ -1,27 +1,33 @@
-module EditPost exposing (Model, Msg, init, view, update, mountCmd)
+module EditPost exposing (Model, Msg, init, view, update, mountCmd,
+ subscriptions)
 
 import ServerApi exposing (..)
 import Routes
 import Html exposing (..)
-import Html.Attributes exposing (class, href, style, value, placeholder, type_)
+import Html.Attributes exposing (class, href, style, value, placeholder,
+ maxlength, title)
 import Html.Events exposing (onClick, onInput)
 import Http
+import Time exposing (Time, minute)
+
 
 type alias Model =
-    { post : Maybe Post
+    { postOnServer: Maybe Post
+    , postOnClient : Maybe Post
     }
 
 
 type Msg
     = HandlePostRetrieved (Result Http.Error Post)
-    | ChangePostContent String
-    | ChangePostTitle String
-    | UpdatePost
+    | ChangePostContentOnClient String
+    | ChangePostTitleOnClient String
+    | UpdatePostOnServer
+    | Tick Time
 
 
 init : Model
 init =
-    Model (Just { id = Nothing, title = Just "", content = Just "" })
+    Model Nothing (Just { id = Nothing, title = Just "", content = Just "" })
 
 
 mountCmd : Maybe Int -> Cmd Msg
@@ -38,51 +44,83 @@ update action model =
         HandlePostRetrieved res ->
             case res of
                 Result.Ok post ->
-                    ( { model | post = Just post }
+                    let _ = Debug.log "Received updated post" post in
+                    ( { model |
+                        postOnServer = Just post,
+                        postOnClient = Just post }
                     , Cmd.none
                     )
 
                 Result.Err err ->
-                    let _ = Debug.log "Error retrieving post" err
-                    in
-                        ({ model | post = Nothing }, Cmd.none)
-        ChangePostTitle newTitle ->
-            case model.post of
+                    let _ = Debug.log "Error retrieving post" err in
+                    ( { model |
+                        postOnServer = Nothing,
+                        postOnClient = Nothing }
+                    , Cmd.none
+                    )
+        ChangePostTitleOnClient newTitle ->
+            case model.postOnClient of
                 Just justPost ->
-                    ( { model | post = Just { justPost | title = Just newTitle } }
+                    ( { model | postOnClient = Just { justPost | title = Just newTitle } }
                     , Cmd.none
                     )
                 Nothing -> (model, Cmd.none)
 
-        ChangePostContent newContent ->
-            case model.post of
+        ChangePostContentOnClient newContent ->
+            case model.postOnClient of
                 Just justPost ->
-                    ( { model | post = Just { justPost | content = Just newContent } }
+                    ( { model | postOnClient = Just { justPost | content = Just newContent } }
                     , Cmd.none
                     )
                 Nothing -> (model, Cmd.none)
 
-        UpdatePost ->
-            case model.post of
+        UpdatePostOnServer ->
+            case model.postOnClient of
                 Just post ->
-                    let _ = Debug.log "Updating post" post
+                    let _ = Debug.log "Updating post on server" post
                     in (model, ServerApi.updatePost post HandlePostRetrieved)
                 Nothing -> (model, Cmd.none)
+        Tick _->
+            case model.postOnClient of
+                Just post ->
+                    if model.postOnClient /= model.postOnServer
+                    then let _ = Debug.log "Updating post on server by timer" post
+                        in (model, ServerApi.updatePost post HandlePostRetrieved)
+                    else (model, Cmd.none)
+                Nothing -> (model, Cmd.none)
 
+
+
+
+-- SUBSCRIPTIONS --
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Time.every minute Tick
 
 
 
 
 ------ VIEW ------
 
+renderUpdateButton : Model -> Html Msg
+renderUpdateButton model =
+    if model.postOnClient /= model.postOnServer
+    then span [ style [ ("color", "#fff")
+                      , ("cursor", "pointer") ]
+              , class "glyphicon glyphicon-floppy-disk"
+              , title "Save changes"
+              , onClick UpdatePostOnServer ] []
+    else div [] []
+
+
 view : Model -> Html Msg
 view model =
     div [ style [ ("background-color", "#777")
                 , ("display", "flex")
                 , ("justify-content", "center")
-                , ("width", "100vw")
                 , ("min-height", "100vh") ] ]
-        [ case model.post of
+        [ case model.postOnClient of
             Just post ->
                 div [ style [ ("padding", "32px")
                             , ("margin", "32px")
@@ -90,49 +128,41 @@ view model =
                             , ("display", "flex")
                             , ("flex-direction", "column")
                             , ("background-color", "#333") ] ]
-                    [ input [ style [ ("color", "#ddd")
-                                    , ("background-color", "inherit")
-                                    , ("border", "none")
-                                    , ("font-size", "30px")
-                                    , ("padding", "0 8px")
-                                    , ("margin", "16px 0") ]
-                            , type_ "text"
-                            , value (Maybe.withDefault "" post.title)
-                            , placeholder "..type here the title of the post"
-                            , onInput ChangePostTitle ] []
+                    [ textarea [ style [ ("color", "#ddd")
+                                       , ("width", "100%")
+                                       , ("background-color", "inherit")
+                                       , ("border", "none")
+                                       , ("font-size", "30px")
+                                       , ("padding", "0 8px")
+                                       , ("resize", "vertical")
+                                       , ("margin", "16px 0") ]
+                               , maxlength 200
+                               , value (Maybe.withDefault "" post.title)
+                               , placeholder "..type here the title of the post"
+                               , onInput ChangePostTitleOnClient ] []
                     , textarea [ style [ ("color", "#fff")
                                        , ("background-color", "inherit")
                                        , ("flex-grow", "1")
                                        , ("margin-bottom", "32px")
-                                       , ("padding", "0 8px")
+                                       , ("padding", "8px")
                                        , ("resize", "none")
                                        , ("border", "none") ]
                                , value (Maybe.withDefault "" post.content)
+                               , maxlength 10000
                                , placeholder "..type here the content of the post"
-                               , onInput ChangePostContent ] []
+                               , onInput ChangePostContentOnClient ] []
                     , div [ style [ ("display", "flex")
                                   , ("align-items", "baseline")
+                                  , ("align-self", "flex-end")
+                                  , ("font-size", "18px")
                                   ] ]
-                        [ button [ style [ ("background-color", "#3c6d3d")
-                                         , ("flex-grow", "1")
-                                         , ("color", "#fff")
-                                         , ("border-radius", "5px")
-                                         , ("border-color", "#5eab60")
-                                         , ("padding", "6px")
-                                         , ("margin", "0 8px")
-                                         , ("font-size", "18px") ]
-                                 , onClick UpdatePost ]
-                            [ case post.id of
-                                Just postId -> text "Update"
-                                Nothing -> text "Create"
-                            ]
-                        , Routes.linkTo Routes.PostsPage [ style [ ("color", "#fff")
-                                                                 , ("margin-left", "16px")
-                                                                 , ("font-size", "18px")
-                                                                 ]
-                                                         , class "glyphicon glyphicon-home"
-                                                         ]
-                            []
+                        [ renderUpdateButton model
+                        , Routes.linkTo Routes.PostsPage
+                            [ style [ ("color", "#fff")
+                                    , ("margin-left", "16px")
+                                    ]
+                            , class "glyphicon glyphicon-home"
+                            ] []
                         ]
                     ]
             Nothing ->

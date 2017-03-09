@@ -16,7 +16,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
 
 
@@ -84,6 +84,12 @@ update msg model =
 
         Navigate url ->
             model ! [ Navigation.newUrl url ]
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel) ]
 
 
 urlUpdate : Navigation.Location -> Model -> ( Model, Cmd Msg )
