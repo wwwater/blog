@@ -17,7 +17,8 @@ cabal-version:       >=1.10
 
 executable cyclinginthewind
   main-is:             Main.hs
-  other-modules: Api, Bootstrap, Model, Storage
+  other-modules: Api, Bootstrap, Model, Storage, Jwt
+
   -- other-extensions:
   build-depends:
       base >= 4.7 && < 5
@@ -33,5 +34,10 @@ executable cyclinginthewind
     , warp
     , sqlite-simple
     , containers
+    , jwt
+    , bytestring
+    , pwstore-fast
+    , text
+    , time
   hs-source-dirs:      src
   default-language:    Haskell2010

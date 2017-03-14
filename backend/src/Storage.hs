@@ -16,6 +16,8 @@ import Database.SQLite.Simple.Types as SqlTypes
 instance Sql.FromRow M.Post where
   fromRow = M.Post <$> Sql.field <*> Sql.field <*> Sql.field
 
+instance Sql.FromRow M.Credentials where
+  fromRow = M.Credentials <$> Sql.field <*> Sql.field
 
 
 selectAllPosts :: Sql.Connection -> IO [M.Post]
@@ -43,4 +45,12 @@ updatePost conn post = do
   case (length updated) of
       0 -> return Nothing
       _ -> return $ Just $ head updated
+
+
+getUserPassword :: Sql.Connection -> String -> IO (Maybe String)
+getUserPassword conn username = do
+  result <- (Sql.query conn "SELECT * FROM user WHERE name = ?" (Sql.Only username) :: IO [M.Credentials])
+  case (length result) of
+      0 -> return Nothing
+      _ -> return $ Just $ M.password $ head result
 
