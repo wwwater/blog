@@ -16,6 +16,7 @@ type alias Model =
 
 type Msg
     = HandlePostsRetrieved (Result Http.Error (List Post))
+    | GoToPost Int
 
 
 init : Model
@@ -44,6 +45,8 @@ update action model =
                     in
                         (model, Cmd.none)
 
+        GoToPost id -> (model, Routes.navigate (Routes.PostPage id))
+
 
 
 
@@ -59,22 +62,27 @@ view model =
         , ("justify-content", "center")
         , ("min-height", "100vh") ] ]
         [ div [ style [ ("width", "800px") ] ]
-            (List.map postPanel model.posts)
+            (List.map postPanel (List.reverse model.posts))
         ]
 
+postTitle : Maybe String -> String
+postTitle maybeTitle =
+    let title = Maybe.withDefault "" maybeTitle
+    in if title == "" then "<no title>" else title
 
 postPanel : Post -> Html Msg
 postPanel post =
-    Routes.linkTo (Routes.PostPage (Maybe.withDefault 0 post.id))
-        [ style [ ("display", "block")
+    div
+        [ style [ ("cursor", "pointer")
                 , ("padding", "32px")
-                , ("color", "transparent")
                 , ("margin", "32px")
                 , ("background-color", "#333") ]
+        , onClick (GoToPost (Maybe.withDefault 0 post.id))
         ]
         [ h2 [ style [ ("color", "#ddd") ] ]
-            [ text (Maybe.withDefault "<no title>" post.title) ]
+            [ text (postTitle post.title) ]
         , div [ style [ ("color", "#fff")
+                      , ("white-space", "pre-wrap")
                       , ("text-align", "justify") ] ]
             [ let content = Maybe.withDefault "" post.content in
                 if (String.length content > 1000)

@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Bootstrap where
 
 import Database.SQLite.Simple as Sql
-import Database.SQLite.Simple.Types as SqlTypes
 
 
 bootstrapDB :: Sql.Connection -> IO ()

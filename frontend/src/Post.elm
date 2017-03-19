@@ -14,6 +14,7 @@ type alias Model =
 
 type Msg
     = HandlePostRetrieved (Result Http.Error Post)
+    | GoToEditPost Int
 
 
 init : Model
@@ -41,6 +42,10 @@ update action model =
                     in
                         (model, Cmd.none)
 
+        GoToEditPost id ->
+            (model, Routes.navigate (Routes.EditPostPage id))
+
+
 
 
 
@@ -48,8 +53,8 @@ update action model =
 ------ VIEW ------
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> Maybe Jwt -> Html Msg
+view model jwt =
     div [ style [ ("background-color", "#777")
                 , ("display", "flex")
                 , ("justify-content", "center")
@@ -67,24 +72,23 @@ view model =
                     , div [ style [ ("color", "#fff")
                                   , ("flex-grow", "1")
                                   , ("text-align", "justify")
+                                  , ("white-space", "pre-wrap")
                                   ] ]
                         [ text (Maybe.withDefault "" post.content) ]
                     , div [ style [ ("font-size", "18px")
                                   , ("align-self", "flex-end")
                                   , ("margin-top", "16px")
                                   ] ]
-                        [ Routes.linkTo (Routes.EditPostPage (Maybe.withDefault 0 post.id))
-                            [ style [ ("color", "#fff")
-                                    , ("margin-left", "16px")
-                                    ]
-                            , class "glyphicon glyphicon-pencil"
-                            ] []
-                        , Routes.linkTo Routes.PostsPage
-                            [ style [ ("color", "#fff")
-                                    , ("margin-left", "16px")
-                                    ]
-                            , class "glyphicon glyphicon-home"
-                            ] []
+                        [ case jwt of
+                            Just _ -> a
+                                [ style [ ("color", "#fff")
+                                        , ("margin-left", "16px")
+                                        , ("cursor", "pointer")
+                                        ]
+                                , class "glyphicon glyphicon-pencil"
+                                , onClick (GoToEditPost (Maybe.withDefault 0 post.id))
+                                ] []
+                            Nothing -> div [] []
                         ]
                     ]
             Nothing ->

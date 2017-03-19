@@ -2,7 +2,6 @@ module EditPost exposing (Model, Msg, init, view, update, mountCmd,
  subscriptions)
 
 import ServerApi exposing (..)
-import Routes
 import Html exposing (..)
 import Html.Attributes exposing (class, href, style, value, placeholder,
  maxlength, title)
@@ -12,7 +11,7 @@ import Time exposing (Time, minute)
 
 
 type alias Model =
-    { postOnServer: Maybe Post
+    { postOnServer : Maybe Post
     , postOnClient : Maybe Post
     }
 
@@ -21,8 +20,8 @@ type Msg
     = HandlePostRetrieved (Result Http.Error Post)
     | ChangePostContentOnClient String
     | ChangePostTitleOnClient String
-    | UpdatePostOnServer
-    | Tick Time
+    | UpdatePostOnServer Jwt
+    | Tick Jwt Time
 
 
 init : Model
@@ -44,7 +43,7 @@ update action model =
         HandlePostRetrieved res ->
             case res of
                 Result.Ok post ->
-                    let _ = Debug.log "Received updated post" post in
+                    let _ = Debug.log "Received updated post" post.id in
                     ( { model |
                         postOnServer = Just post,
                         postOnClient = Just post }
@@ -74,18 +73,18 @@ update action model =
                     )
                 Nothing -> (model, Cmd.none)
 
-        UpdatePostOnServer ->
+        UpdatePostOnServer jwt ->
             case model.postOnClient of
                 Just post ->
-                    let _ = Debug.log "Updating post on server" post
-                    in (model, ServerApi.updatePost post HandlePostRetrieved)
+                    let _ = Debug.log "Updating post on server" post.id
+                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved)
                 Nothing -> (model, Cmd.none)
-        Tick _->
+        Tick jwt _ ->
             case model.postOnClient of
                 Just post ->
                     if model.postOnClient /= model.postOnServer
-                    then let _ = Debug.log "Updating post on server by timer" post
-                        in (model, ServerApi.updatePost post HandlePostRetrieved)
+                    then let _ = Debug.log "Updating post on server by timer" post.id
+                        in (model, ServerApi.updatePost post jwt HandlePostRetrieved)
                     else (model, Cmd.none)
                 Nothing -> (model, Cmd.none)
 
@@ -94,28 +93,28 @@ update action model =
 
 -- SUBSCRIPTIONS --
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-  Time.every minute Tick
+subscriptions : Model -> Jwt -> Sub Msg
+subscriptions model jwt =
+  Time.every minute (Tick jwt)
 
 
 
 
 ------ VIEW ------
 
-renderUpdateButton : Model -> Html Msg
-renderUpdateButton model =
+renderUpdateButton : Model -> Jwt -> Html Msg
+renderUpdateButton model jwt =
     if model.postOnClient /= model.postOnServer
     then span [ style [ ("color", "#fff")
                       , ("cursor", "pointer") ]
               , class "glyphicon glyphicon-floppy-disk"
               , title "Save changes"
-              , onClick UpdatePostOnServer ] []
+              , onClick (UpdatePostOnServer jwt) ] []
     else div [] []
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> Jwt -> Html Msg
+view model jwt =
     div [ style [ ("background-color", "#777")
                 , ("display", "flex")
                 , ("justify-content", "center")
@@ -156,14 +155,7 @@ view model =
                                   , ("align-self", "flex-end")
                                   , ("font-size", "18px")
                                   ] ]
-                        [ renderUpdateButton model
-                        , Routes.linkTo Routes.PostsPage
-                            [ style [ ("color", "#fff")
-                                    , ("margin-left", "16px")
-                                    ]
-                            , class "glyphicon glyphicon-home"
-                            ] []
-                        ]
+                        [ renderUpdateButton model jwt ]
                     ]
             Nothing ->
                 h2 [ style [ ("color", "#fff")

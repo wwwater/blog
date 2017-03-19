@@ -38,7 +38,7 @@ blogResourcePolicy =
     CorsResourcePolicy
         { corsOrigins = Nothing -- gives you /*
         , corsMethods = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTION"]
-        , corsRequestHeaders = simpleHeaders -- adds "Content-Type" to defaults
+        , corsRequestHeaders = "jwt":simpleHeaders -- adds "Content-Type" to defaults
         , corsExposedHeaders = Nothing
         , corsMaxAge = Nothing
         , corsVaryOrigin = False

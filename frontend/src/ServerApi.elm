@@ -10,6 +10,12 @@ type alias Post =
     , content : Maybe String
     }
 
+type alias Credentials =
+    { username : String
+    , password : String
+    }
+
+type alias Jwt = String
 
 
 baseUrl : String
@@ -27,10 +33,24 @@ getPost id msg =
     Http.get (baseUrl ++ "/post/" ++ toString id) postDecoder
         |> Http.send msg
 
-updatePost : Post -> (Result Http.Error Post -> msg) -> Cmd msg
-updatePost post msg =
-    Http.post (baseUrl ++ "/post/")
-        (Http.stringBody "application/json" <| encodePost post) postDecoder
+getJwt : Credentials -> (Result Http.Error Jwt -> msg) -> Cmd msg
+getJwt credentials msg =
+    Http.post (baseUrl ++ "/jwt")
+        (Http.stringBody "application/json" <| encodeCredentials credentials)
+        jwtDecoder
+        |> Http.send msg
+
+updatePost : Post -> Jwt -> (Result Http.Error Post -> msg) -> Cmd msg
+updatePost post jwt msg =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "jwt" jwt ]
+        , url = baseUrl ++ "/post/"
+        , body = Http.stringBody "application/json" <| encodePost post
+        , expect = Http.expectJson postDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
         |> Http.send msg
 
 postsDecoder : JsonD.Decoder (List Post)
@@ -61,3 +81,14 @@ encodePost post =
                     Just postContent -> JsonE.string postContent
                     Nothing -> JsonE.null)
             ]
+
+encodeCredentials : Credentials -> String
+encodeCredentials credentials =
+    JsonE.encode 0 <|
+        JsonE.object
+            [ ("username", JsonE.string credentials.username)
+            , ("password", JsonE.string credentials.password)
+            ]
+
+jwtDecoder : JsonD.Decoder Jwt
+jwtDecoder = JsonD.field "token" JsonD.string

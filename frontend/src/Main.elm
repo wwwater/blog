@@ -3,11 +3,14 @@ module Main exposing (..)
 import Posts
 import Post
 import EditPost
+import Login
+import Menu
 import Routes exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html
 import Navigation
+import ServerApi exposing (Jwt)
 
 
 main : Program Never Model Msg
@@ -25,6 +28,8 @@ type alias Model =
     , postsModel : Posts.Model
     , postModel : Post.Model
     , editPostModel: EditPost.Model
+    , loginModel: Login.Model
+    , jwt : Maybe Jwt
     }
 
 
@@ -32,6 +37,8 @@ type Msg
     = PostsMsg Posts.Msg
     | PostMsg Post.Msg
     | EditPostMsg EditPost.Msg
+    | LoginMsg Login.Msg
+    | MenuMsg Menu.Msg
     | Navigate String
     | UrlChange Navigation.Location
 
@@ -42,6 +49,8 @@ initialModel =
     , postsModel = Posts.init
     , postModel = Post.init
     , editPostModel = EditPost.init
+    , loginModel = Login.init
+    , jwt = Nothing
     }
 
 
@@ -79,6 +88,24 @@ update msg model =
                 { model | editPostModel = subMdl }
                     ! [ Cmd.map EditPostMsg subCmd ]
 
+        LoginMsg m ->
+            let
+                ( subMdl, subCmd ) =
+                    Login.update m model.loginModel
+            in
+                { model |
+                  loginModel = subMdl,
+                  jwt = subMdl.jwt }
+                    ! [ Cmd.map LoginMsg subCmd ]
+
+        MenuMsg m ->
+            let
+                ( subMdl, subCmd ) =
+                    Menu.update m {}
+            in
+                model
+                    ! [ Cmd.map MenuMsg subCmd ]
+
         UrlChange loc ->
             urlUpdate loc model
 
@@ -86,10 +113,12 @@ update msg model =
             model ! [ Navigation.newUrl url ]
 
 
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel) ]
+        [ Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel
+         (Maybe.withDefault "" model.jwt)) ]
 
 
 urlUpdate : Navigation.Location -> Model -> ( Model, Cmd Msg )
@@ -107,16 +136,29 @@ urlUpdate loc model =
                 ! [ Cmd.map PostMsg <| Post.mountCmd postId ]
 
         Just ((EditPostPage postId) as route) ->
-            { model | route = route }
-                ! [ Cmd.map EditPostMsg <| EditPost.mountCmd (Just postId) ]
+            let _ = Debug.log "Jwt in global model is" model.jwt in
+            case model.jwt of
+                Just jwt ->
+                    { model | route = route }
+                        ! [ Cmd.map EditPostMsg <| EditPost.mountCmd (Just postId) ]
+                Nothing ->
+                    model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 
         Just (NewPostPage as route) ->
             { model | route = route }
                 ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
 
+        Just (LoginPage as route) ->
+            { model | route = route }
+                ! [ Cmd.map LoginMsg <| Login.mountCmd ]
+
+
 
 view : Model -> Html Msg
-view model = contentView model
+view model = div []
+    [ Html.map MenuMsg <| Menu.view model.jwt
+    , contentView model
+    ]
 
 
 
@@ -127,10 +169,15 @@ contentView model =
             Html.map PostsMsg <| Posts.view model.postsModel
 
         PostPage id ->
-            Html.map PostMsg <| Post.view model.postModel
+            Html.map PostMsg <| Post.view model.postModel model.jwt
 
         EditPostPage id ->
             Html.map EditPostMsg <| EditPost.view model.editPostModel
+             (Maybe.withDefault "" model.jwt)
 
         NewPostPage ->
             Html.map EditPostMsg <| EditPost.view model.editPostModel
+             (Maybe.withDefault "" model.jwt)
+
+        LoginPage ->
+            Html.map LoginMsg <| Login.view model.loginModel

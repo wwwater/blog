@@ -13,6 +13,7 @@ type Route
     | PostPage Int
     | EditPostPage Int
     | NewPostPage
+    | LoginPage
 
 
 routeParser : Parser (Route -> a) a
@@ -22,6 +23,7 @@ routeParser =
         , UrlParser.map PostPage (s "post" </> int)
         , UrlParser.map EditPostPage (s "edit" </> int)
         , UrlParser.map NewPostPage (s "new")
+        , UrlParser.map LoginPage (s "login")
         ]
 
 
@@ -46,6 +48,9 @@ encode route =
 
         NewPostPage ->
             "/new"
+
+        LoginPage ->
+            "/login"
 
 
 
