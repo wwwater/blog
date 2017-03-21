@@ -1,23 +1,30 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Api where
 
-import qualified Model as M
-import qualified Storage as S
 
-import Control.Monad.IO.Class               (MonadIO, liftIO)
-import Control.Monad.Trans.Either
-import Servant
--- import Servant.Server.Internal.ServantErr   (ServantErr, err401, err404)
+import Servant                              (Proxy (..), throwError)
+import Servant.Server                       (Server, Handler)
+import Servant.API.Alternative              ((:<|>) (..))
+import Servant.API.Sub                      ((:>))
+import Servant.API.Verbs                    (Get, Post)
+import Servant.API.ReqBody                  (ReqBody)
+import Servant.API.Capture                  (Capture)
+import Servant.API.ContentTypes             (JSON)
+import Servant.API.Header                   (Header)
+import Servant.Server.Internal.ServantErr   (ServantErr, err401, err404, errBody)
+import Control.Monad.IO.Class               (liftIO)
 import Database.SQLite.Simple as Sql
 import Crypto.PasswordStore                 (verifyPassword)
 import Data.ByteString.Char8                (pack)
 import Data.Text                            (unpack)
 
 import Jwt                                  (createJwt, verifyJwt)
-
+import qualified Model as M
+import qualified Storage as S
 
 
 
@@ -28,10 +35,11 @@ jwtServer :: Sql.Connection -> Server JwtAPI
 jwtServer conn =
   grantJwt
     where
-      passwordHash credentials = S.getUserPassword conn (M.username credentials)
-      jwt credentials = issueJwt (M.password credentials) (passwordHash credentials)
+      grantJwt :: M.Credentials -> Handler M.Jwt
+      grantJwt credentials = liftIOMaybeToHandler err (jwt credentials)
       err = err401 { errBody = "Wrong password or user does not exist."}
-      grantJwt credentials = liftIOMaybeToEither err (jwt credentials)
+      jwt credentials = issueJwt (M.password credentials) (passwordHash credentials)
+      passwordHash credentials = S.getUserPassword conn (M.username credentials)
 
 issueJwt :: String -> IO (Maybe String) -> IO (Maybe M.Jwt)
 issueJwt password passwordHashIO = do
@@ -42,7 +50,6 @@ issueJwt password passwordHashIO = do
         then fmap (Just . M.Jwt . unpack) $ createJwt "meow"
         else return Nothing
     Nothing -> return Nothing
-
 
 
 
@@ -59,20 +66,19 @@ postServer conn =
 
   where
     getAllPosts = liftIO $ S.selectAllPosts conn
-    getPost postId = liftIOMaybeToEither err404 $ S.selectPost conn postId
+    getPost postId = liftIOMaybeToHandler err404 $ S.selectPost conn postId
     updatePost jwt post =
-      case jwt of
-        Just jwtToken -> do
-          valid <- liftIO $ verifyJwt "meow" jwtToken
-          if valid
-            then updateAuthorizedPost conn post
-            else left err401 { errBody = "JWT token has expired or not valid." }
-        Nothing -> left err401 { errBody = "Please provide JWT token in header." }
+          case jwt of
+            Just jwtToken -> do
+              valid <- liftIO $ verifyJwt "meow" jwtToken
+              if valid
+                then updateAuthorizedPost conn post
+                else throwError err401 { errBody = "JWT token has expired or not valid." }
+            Nothing -> throwError err401 { errBody = "Please provide JWT token in header." }
 
 
-
-updateAuthorizedPost :: Sql.Connection -> M.Post -> EitherT ServantErr IO M.Post
-updateAuthorizedPost conn post = liftIOMaybeToEither err404 $
+updateAuthorizedPost :: Sql.Connection -> M.Post -> Handler M.Post
+updateAuthorizedPost conn post = liftIOMaybeToHandler err404 $
   case M.postId post of
     Just _ -> S.updatePost conn post
     Nothing -> S.insertPost conn post
@@ -82,12 +88,12 @@ updateAuthorizedPost conn post = liftIOMaybeToEither err404 $
 
 
 
-liftIOMaybeToEither ::  (MonadIO m) => a -> IO (Maybe b) -> EitherT a m b
-liftIOMaybeToEither err x = do
+liftIOMaybeToHandler :: ServantErr -> IO (Maybe a) -> Handler a
+liftIOMaybeToHandler err x = do
   m <- liftIO x
   case m of
-    Nothing -> left err
-    Just y -> right y
+    Nothing -> throwError err
+    Just y -> return y
 
 
 

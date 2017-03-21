@@ -16,9 +16,10 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable cyclinginthewind
-  main-is:           App.hs
+  main-is:           Main.hs
   other-modules:
-      Api
+      App
+    , Api
     , Bootstrap
     , Model
     , Storage
@@ -27,7 +28,7 @@ executable cyclinginthewind
   -- other-extensions:
   build-depends:
       base >= 4.7 && < 5
-    , either
+    , mtl
     , transformers
     , text
     , aeson >= 0.8
@@ -53,7 +54,6 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && < 5
-    , either
     , transformers
     , text
     , aeson >= 0.8

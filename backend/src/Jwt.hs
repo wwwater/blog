@@ -10,7 +10,7 @@ import Web.JWT                  (iat,
                                 Algorithm(HS256),
                                 def,
                                 JSON,
-                                intDate,
+                                numericDate,
                                 claims,
                                 secondsSinceEpoch)
 import Data.Time.Clock.POSIX    (getPOSIXTime)
@@ -20,7 +20,7 @@ createJwt :: String -> IO JSON
 createJwt key = do
   now <- getPOSIXTime
   let expire = now + 60 * 60
-      claimsSet = def { iat = intDate now, Web.JWT.exp = intDate expire }
+      claimsSet = def { iat = numericDate now, Web.JWT.exp = numericDate expire }
    in return $ encodeSigned HS256 (secret (pack key)) claimsSet
 
 verifyJwt :: String -> String -> IO Bool
