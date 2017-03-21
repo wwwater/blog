@@ -3,21 +3,9 @@ module Storage where
 
 
 import qualified Model as M
-import qualified Data.Text as Txt
-import qualified Data.Map.Strict as Map
-import Control.Monad
-import Data.Maybe
-
-
 import Database.SQLite.Simple as Sql
-import Database.SQLite.Simple.Types as SqlTypes
 
 
-instance Sql.FromRow M.Post where
-  fromRow = M.Post <$> Sql.field <*> Sql.field <*> Sql.field
-
-instance Sql.FromRow M.Credentials where
-  fromRow = M.Credentials <$> Sql.field <*> Sql.field
 
 
 selectAllPosts :: Sql.Connection -> IO [M.Post]

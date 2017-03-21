@@ -16,8 +16,13 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable cyclinginthewind
-  main-is:             Main.hs
-  other-modules: Api, Bootstrap, Model, Storage, Jwt
+  main-is:           App.hs
+  other-modules:
+      Api
+    , Bootstrap
+    , Model
+    , Storage
+    , Jwt
 
   -- other-extensions:
   build-depends:
@@ -41,3 +46,48 @@ executable cyclinginthewind
     , time
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.7 && < 5
+    , either
+    , transformers
+    , text
+    , aeson >= 0.8
+    , servant
+    , servant-server
+    , wai
+    , wai-cors
+    , wai-extra
+    , warp
+    , sqlite-simple
+    , containers
+    , jwt
+    , bytestring
+    , pwstore-fast
+    , text
+    , time
+  exposed-modules:
+      App
+    , Api
+    , Bootstrap
+    , Model
+    , Storage
+    , Jwt
+  default-language: Haskell2010
+
+test-suite hspec
+    build-depends:
+        base
+      , cyclinginthewind
+      , hspec
+      , hspec-wai
+      , sqlite-simple
+    default-language: Haskell2010
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    other-modules:    ApiSpec
+    type:             exitcode-stdio-1.0

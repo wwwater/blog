@@ -14,7 +14,6 @@ import Web.JWT                  (iat,
                                 claims,
                                 secondsSinceEpoch)
 import Data.Time.Clock.POSIX    (getPOSIXTime)
-import Control.Monad.IO.Class   (liftIO)
 import Data.Text                (pack)
 
 createJwt :: String -> IO JSON

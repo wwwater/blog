@@ -7,22 +7,16 @@ module Api where
 import qualified Model as M
 import qualified Storage as S
 
-import Data.Aeson
 import Control.Monad.IO.Class               (MonadIO, liftIO)
 import Control.Monad.Trans.Either
 import Servant
-import Servant.Server.Internal.ServantErr   (ServantErr, err401, err404)
+-- import Servant.Server.Internal.ServantErr   (ServantErr, err401, err404)
 import Database.SQLite.Simple as Sql
 import Crypto.PasswordStore                 (verifyPassword)
 import Data.ByteString.Char8                (pack)
 import Data.Text                            (unpack)
 
 import Jwt                                  (createJwt, verifyJwt)
-
-instance FromJSON M.Credentials
-instance ToJSON M.Jwt
-instance FromJSON M.Post
-instance ToJSON M.Post
 
 
 
@@ -36,8 +30,8 @@ jwtServer conn =
     where
       passwordHash credentials = S.getUserPassword conn (M.username credentials)
       jwt credentials = issueJwt (M.password credentials) (passwordHash credentials)
-      error = err401 { errBody = "Wrong password or user does not exist."}
-      grantJwt credentials = liftIOMaybeToEither error (jwt credentials)
+      err = err401 { errBody = "Wrong password or user does not exist."}
+      grantJwt credentials = liftIOMaybeToEither err (jwt credentials)
 
 issueJwt :: String -> IO (Maybe String) -> IO (Maybe M.Jwt)
 issueJwt password passwordHashIO = do
@@ -80,7 +74,7 @@ postServer conn =
 updateAuthorizedPost :: Sql.Connection -> M.Post -> EitherT ServantErr IO M.Post
 updateAuthorizedPost conn post = liftIOMaybeToEither err404 $
   case M.postId post of
-    Just postId -> S.updatePost conn post
+    Just _ -> S.updatePost conn post
     Nothing -> S.insertPost conn post
 
 
@@ -93,7 +87,7 @@ liftIOMaybeToEither err x = do
   m <- liftIO x
   case m of
     Nothing -> left err
-    Just x -> right x
+    Just y -> right y
 
 
 
