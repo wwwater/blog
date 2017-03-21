@@ -7,12 +7,6 @@ import GHC.Generics
 import Database.SQLite.Simple as Sql
 import Data.Aeson
 
-data Comment = Comment
-  { commentId :: Int
-  , commentAuthor :: Maybe String
-  , commentContent :: String
-  } deriving (Eq, Show, Generic)
-
 data Post = Post
   { postId :: Maybe Int
   , postTitle :: Maybe String

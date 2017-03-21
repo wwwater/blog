@@ -14,7 +14,7 @@ import qualified Data.ByteString        as B
 import qualified Data.ByteString.Lazy   as BL
 
 import qualified App
-import qualified Bootstrap
+import qualified Storage
 
 
 
@@ -34,12 +34,12 @@ spec = beforeAll testConnect $
     after (\connection -> Sql.execute_ connection "DROP TABLE post") $ do
 
     it "retrieves empty list of posts" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith` "[]" {matchStatus = 200}
 
     it "retrieves one post" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith`
@@ -47,7 +47,7 @@ spec = beforeAll testConnect $
           {matchStatus = 200}
 
     it "retrieves a post by id" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (5, 'Title', 'Content')"
       withApplication (App.app connection) $ do
@@ -56,12 +56,12 @@ spec = beforeAll testConnect $
           {matchStatus = 200}
 
     it "returns 404 if post id does not exist" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       withApplication (App.app connection) $ do
         get "/post/5" `shouldRespondWith`404
 
     it "does not permit update a post without JWT" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       withApplication (App.app connection) $ do
         request "POST"
                 "/post"
@@ -128,7 +128,7 @@ spec = beforeAll testConnect $
           `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":3,\"postTitle\":\"Updated post\"}"
 
     it "cannot create a new post using wrong JWT" $ \connection -> do
-      Bootstrap.createSchema connection
+      Storage.createSchema connection
       withApplication (App.app connection) $ do
         request "POST"
                 "/post"
@@ -139,7 +139,7 @@ spec = beforeAll testConnect $
 
 addTestUserToDB :: Sql.Connection -> IO()
 addTestUserToDB connection = do
-  Bootstrap.createSchema connection
+  Storage.createSchema connection
   hash <- makePassword "testPassword" 17
   Sql.executeNamed connection "INSERT INTO user (name, password) VALUES ('test', :hash)"
     [":hash" Sql.:= decodeUtf8 hash]

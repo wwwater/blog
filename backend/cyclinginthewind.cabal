@@ -20,7 +20,6 @@ executable cyclinginthewind
   other-modules:
       App
     , Api
-    , Bootstrap
     , Model
     , Storage
     , Jwt
@@ -73,7 +72,6 @@ library
   exposed-modules:
       App
     , Api
-    , Bootstrap
     , Model
     , Storage
     , Jwt

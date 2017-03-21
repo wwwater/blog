@@ -2,8 +2,6 @@
 module Main (main) where
 
 
-import qualified App
-import qualified Bootstrap as B
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
@@ -12,6 +10,8 @@ import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
 import Control.Exception (bracket)
 import Database.SQLite.Simple as Sql
 
+import qualified App
+import qualified Storage
 
 
 testConnect :: IO Sql.Connection
@@ -48,5 +48,5 @@ blogResourcePolicy =
 main :: IO ()
 main = do
   withTestConnection $ \conn ->  do
-    B.bootstrapDB conn
+    Storage.createSchema conn
     run 8081 $ logStdoutDev $ blogCors $ App.app conn

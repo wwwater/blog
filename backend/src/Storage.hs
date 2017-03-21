@@ -6,6 +6,16 @@ import qualified Model as M
 import Database.SQLite.Simple as Sql
 
 
+createSchema :: Sql.Connection -> IO ()
+createSchema conn = do
+  executeDB "PRAGMA foreign_keys = ON"
+  executeDB "CREATE TABLE IF NOT EXISTS post (id INTERGER PRIMARY KEY ASC, title VARCHAR2(255), content TEXT)"
+  executeDB "CREATE TABLE IF NOT EXISTS user (name INTERGER PRIMARY KEY ASC, password TEXT)"
+
+  where
+    executeDB = Sql.execute_ conn
+
+
 
 
 selectAllPosts :: Sql.Connection -> IO [M.Post]
