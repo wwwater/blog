@@ -8,13 +8,16 @@ import Network.Wai.Test         (SResponse (..))
 import Test.Hspec.Wai.Internal  (withApplication)
 import Crypto.PasswordStore     (makePassword)
 import Data.Text.Encoding       (decodeUtf8)
+import Data.Aeson               (decode, encode)
 
 import qualified Database.SQLite.Simple as Sql
 import qualified Data.ByteString        as B
+import qualified Data.ByteString.Char8  as Char8
 import qualified Data.ByteString.Lazy   as BL
 
 import qualified App
 import qualified Storage
+import qualified Model
 
 
 
@@ -66,7 +69,7 @@ spec = beforeAll testConnect $
         request "POST"
                 "/post"
                 [("Content-Type", "application/json")]
-                "{\"postContent\":\"Content\",\"postTitle\":\"New post\"}"
+                (createPostJson Nothing "New post" "Content")
         `shouldRespondWith`401
 
 
@@ -79,7 +82,7 @@ spec = beforeAll testConnect $
         request "POST"
                 "/jwt"
                 [("Content-Type", "application/json")]
-                "{\"username\":\"test\",\"password\":\"testPassword\"}"
+                (createCredentialsJson "test" "testPassword")
             `shouldRespondWith` 200
 
     it "returns an error if user does not exist" $ \connection -> do
@@ -88,7 +91,7 @@ spec = beforeAll testConnect $
         request "POST"
                 "/jwt"
                 [("Content-Type", "application/json")]
-                "{\"username\":\"test-not-exist\",\"password\":\"testPassword\"}"
+                (createCredentialsJson "not-existent-user" "testPassword")
             `shouldRespondWith` 401
 
     it "returns an error if password is wrong" $ \connection -> do
@@ -97,7 +100,7 @@ spec = beforeAll testConnect $
         request "POST"
                 "/jwt"
                 [("Content-Type", "application/json")]
-                "{\"username\":\"test\",\"password\":\"testPasswordWrong\"}"
+                (createCredentialsJson "test" "wrongPassword")
             `shouldRespondWith` 401
 
     it "can create a new post using JWT" $ \connection -> do
@@ -106,25 +109,25 @@ spec = beforeAll testConnect $
         response <- request "POST"
                             "/jwt"
                             [("Content-Type", "application/json")]
-                            "{\"username\":\"test\",\"password\":\"testPassword\"}"
+                            (createCredentialsJson "test" "testPassword")
         request "POST"
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
-                "{\"postContent\":\"Content\",\"postTitle\":\"New post\"}"
+                (createPostJson Nothing "New post" "Content")
           `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"New post\"}"
 
-    it "can create update a post using JWT" $ \connection -> do
+    it "can update a post using JWT" $ \connection -> do
       addTestUserToDB connection
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
       withApplication (App.app connection) $ do
         response <- request "POST"
                             "/jwt"
                             [("Content-Type", "application/json")]
-                            "{\"username\":\"test\",\"password\":\"testPassword\"}"
+                            (createCredentialsJson "test" "testPassword")
         request "POST"
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
-                "{\"postContent\":\"Content\",\"postId\":3,\"postTitle\":\"Updated post\"}"
+                (createPostJson (Just 3) "Updated post" "Content")
           `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":3,\"postTitle\":\"Updated post\"}"
 
     it "cannot create a new post using wrong JWT" $ \connection -> do
@@ -133,7 +136,7 @@ spec = beforeAll testConnect $
         request "POST"
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", "wrongJWT")]
-                "{\"postContent\":\"Content\",\"postTitle\":\"New post\"}"
+                (createPostJson Nothing "New post" "Content")
           `shouldRespondWith` 401
 
 
@@ -144,9 +147,21 @@ addTestUserToDB connection = do
   Sql.executeNamed connection "INSERT INTO user (name, password) VALUES ('test', :hash)"
     [":hash" Sql.:= decodeUtf8 hash]
 
+createPostJson :: Maybe Int -> String -> String -> BL.ByteString
+createPostJson id title content =
+    encode (Model.Post {
+        Model.postId = id
+      , Model.postTitle = Just title
+      , Model.postContent = Just content})
+
+createCredentialsJson :: String -> String -> BL.ByteString
+createCredentialsJson user password =
+    encode (Model.Credentials {Model.username = user, Model.password = password})
+
 
 getJwtFromResponse :: SResponse -> B.ByteString
 getJwtFromResponse response =
-    let body = B.concat . BL.toChunks $ simpleBody response
-        in B.reverse $ B.drop 2 $ B.reverse $ B.drop 10 body
+  case decode (simpleBody response) of
+    Just jwt -> Char8.pack $ Model.token jwt
+    Nothing -> ""
 

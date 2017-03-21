@@ -5,7 +5,7 @@ module Model where
 import GHC.Generics
 
 import Database.SQLite.Simple as Sql
-import Data.Aeson
+import Data.Aeson (FromJSON, ToJSON)
 
 data Post = Post
   { postId :: Maybe Int
@@ -30,6 +30,8 @@ instance Sql.FromRow Credentials where
   fromRow = Credentials <$> Sql.field <*> Sql.field
 
 instance FromJSON Credentials
+instance ToJSON Credentials
+instance FromJSON Jwt
 instance ToJSON Jwt
 instance FromJSON Post
 instance ToJSON Post
