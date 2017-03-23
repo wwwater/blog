@@ -7,17 +7,17 @@ Initially based on https://github.com/rundis/albums
 
 ### Backend
 
-stack clean
+`stack clean`
 
-stack build
+`stack build`
 
-stack exec cyclinginthewind
+`stack exec cyclinginthewind`
 
-stack test --coverage --ghc-options "-fforce-recomp"
+`stack test --coverage --ghc-options "-fforce-recomp"`
 
 
 ### Frontend
 
-npm run dev
+`npm run dev`
 
-elm test
+`elm test`
