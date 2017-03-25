@@ -135,6 +135,7 @@ view model jwt =
                                        , ("padding", "0 8px")
                                        , ("resize", "vertical")
                                        , ("margin", "16px 0") ]
+                               , class "test-edit-post-title"
                                , maxlength 200
                                , value (Maybe.withDefault "" post.title)
                                , placeholder "..type here the title of the post"
@@ -146,6 +147,7 @@ view model jwt =
                                        , ("padding", "8px")
                                        , ("resize", "none")
                                        , ("border", "none") ]
+                               , class "test-edit-post-content"
                                , value (Maybe.withDefault "" post.content)
                                , maxlength 10000
                                , placeholder "..type here the content of the post"
