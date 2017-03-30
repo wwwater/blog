@@ -1,18 +1,29 @@
-module EditPost exposing (Model, Msg, init, view, update, mountCmd,
- subscriptions)
+module EditPost         exposing ( Model
+                                 , Msg (..)
+                                 , init
+                                 , view
+                                 , update
+                                 , mountCmd
+                                 , subscriptions )
 
-import ServerApi exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (class, href, style, value, placeholder,
- maxlength, title)
-import Html.Events exposing (onClick, onInput)
+import ServerApi        exposing ( Post, Jwt )
+import Html             exposing (..)
+import Html.Attributes  exposing ( class
+                                 , href
+                                 , style
+                                 , value
+                                 , placeholder
+                                 , maxlength
+                                 , title )
+import Html.Events      exposing ( onClick, onInput )
 import Http
-import Time exposing (Time, minute)
+import Time             exposing ( Time, minute )
 
 
 type alias Model =
     { postOnServer : Maybe Post
     , postOnClient : Maybe Post
+    , error : Maybe String
     }
 
 
@@ -26,7 +37,10 @@ type Msg
 
 init : Model
 init =
-    Model Nothing (Just { id = Nothing, title = Just "", content = Just "" })
+    Model
+        Nothing
+        (Just { id = Nothing, title = Just "", content = Just "" })
+        Nothing
 
 
 mountCmd : Maybe Int -> Cmd Msg
@@ -36,6 +50,22 @@ mountCmd id =
             ServerApi.getPost postId HandlePostRetrieved
         Nothing -> Cmd.none
 
+getErrorMessage : Http.Error -> String
+getErrorMessage err =
+    case err of
+        Http.BadStatus badStatus ->
+            case badStatus.status.code of
+                404 -> "Post not found!"
+                401 -> badStatus.body
+                _ -> badStatus.status.message
+        Http.BadUrl text ->
+            "Bad url"  ++ text
+        Http.Timeout ->
+            "Timeout"
+        Http.BadPayload message _ ->
+            "Bad payload " ++ message
+        Http.NetworkError ->
+            "Network error"
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
@@ -45,16 +75,19 @@ update action model =
                 Result.Ok post ->
                     let _ = Debug.log "Received updated post" post.id in
                     ( { model |
-                        postOnServer = Just post,
-                        postOnClient = Just post }
+                          postOnServer = Just post
+                        , postOnClient = Just post
+                        , error = Nothing }
                     , Cmd.none
                     )
 
                 Result.Err err ->
-                    let _ = Debug.log "Error retrieving post" err in
+                    let errorAsString = getErrorMessage err
+                        _ = Debug.log "An error occured in request" errorAsString in
                     ( { model |
-                        postOnServer = Nothing,
-                        postOnClient = Nothing }
+                          postOnServer = Nothing
+                        , postOnClient = Nothing
+                        , error = Just errorAsString }
                     , Cmd.none
                     )
         ChangePostTitleOnClient newTitle ->
@@ -165,5 +198,5 @@ view model jwt =
                             , ("width", "100vw")
                             , ("text-align", "center")
                             ] ]
-                    [ text "No post found!" ]
+                    [ text (Maybe.withDefault "An unexpected error occured." model.error) ]
         ]

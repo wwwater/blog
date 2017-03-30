@@ -2,11 +2,16 @@ module EditPostTest exposing (..)
 
 import Test                 exposing (..)
 import Fuzz                 exposing (string)
+import Expect               exposing (equal)
 import Test.Html.Query      as Query
-import Test.Html.Selector   exposing (text, attribute, class)
+import Test.Html.Selector   exposing (text, attribute, class, tag)
+
+import Http                 exposing (Error(..), Response)
+import Dict                 exposing (empty)
 
 import EditPost
 import Util                 exposing (testPost, testPostEmpty)
+
 
 
 all : Test
@@ -16,7 +21,10 @@ all =
             [ fuzz string "a post displays content" <|
                 \str ->
                     EditPost.view
-                        (EditPost.Model (Just (testPost str)) (Just (testPost str)))
+                        (EditPost.Model
+                            (Just (testPost str))
+                            (Just (testPost str))
+                            Nothing)
                         ""
                     |> Query.fromHtml
                     |> Query.has [ attribute "value" str ]
@@ -25,7 +33,8 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just testPostEmpty)
-                            (Just testPostEmpty))
+                            (Just testPostEmpty)
+                            Nothing)
                         ""
                     |> Query.fromHtml
                     |> Query.find [ class "test-edit-post-title" ]
@@ -35,7 +44,8 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just testPostEmpty)
-                            (Just testPostEmpty))
+                            (Just testPostEmpty)
+                            Nothing)
                         ""
                     |> Query.fromHtml
                     |> Query.find [ class "test-edit-post-content" ]
@@ -45,11 +55,46 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just (testPost "post on the server"))
-                            (Just (testPost "post on the client")))
+                            (Just (testPost "post on the client"))
+                            Nothing)
                         ""
                     |> Query.fromHtml
                     |> Query.find [ class "glyphicon-floppy-disk" ]
                     |> Query.has [ attribute "title" "Save changes" ]
+            , test "page displays error message" <|
+                \() ->
+                    EditPost.view
+                        (EditPost.Model
+                            Nothing
+                            Nothing
+                            (Just "I am an error"))
+                        ""
+                    |> Query.fromHtml
+                    |> Query.find [ tag "h2" ]
+                    |> Query.has [ text "I am an error" ]
+            ]
+        , describe "test component's update function"
+            [ test "a request failed" <|
+                \() ->
+                    EditPost.update
+                        (EditPost.HandlePostRetrieved (Result.Err response401))
+                        (EditPost.Model Nothing Nothing Nothing)
+                    |> Expect.equal (
+                          (EditPost.Model
+                            Nothing
+                            Nothing
+                            (Just "You shall not pass"))
+                        , Cmd.none )
+
             ]
         ]
+
+response401 : Http.Error
+response401 = Http.BadStatus (
+    Http.Response
+        ""
+        {code = 401, message = ""}
+        Dict.empty
+        "You shall not pass"
+    )
 
