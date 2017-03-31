@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Posts
 import Post
@@ -11,6 +11,9 @@ import Html.Attributes exposing (..)
 import Html
 import Navigation
 import ServerApi exposing (Jwt)
+
+port doload : () -> Cmd msg
+port load : (String -> msg) -> Sub msg
 
 
 main : Program Never Model Msg
@@ -41,6 +44,7 @@ type Msg
     | MenuMsg Menu.Msg
     | Navigate String
     | UrlChange Navigation.Location
+    | Load String
 
 
 initialModel : Model
@@ -56,7 +60,8 @@ initialModel =
 
 init : Navigation.Location -> ( Model, Cmd Msg )
 init loc =
-    update (UrlChange loc) initialModel
+    let (mdl, cmd) = update (UrlChange loc) initialModel
+    in (mdl, Cmd.batch[ cmd, doload () ])
 
 
 
@@ -112,13 +117,21 @@ update msg model =
         Navigate url ->
             model ! [ Navigation.newUrl url ]
 
+        Load jwtFromStorage ->
+            let _ = Debug.log "Loaded jwt from local storage" jwtFromStorage in
+            ( { model |
+                jwt = if jwtFromStorage /= "" then Just jwtFromStorage else Nothing }
+            , Cmd.none )
+
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel
-         (Maybe.withDefault "" model.jwt)) ]
+            (Maybe.withDefault "" model.jwt))
+        , load Load
+        ]
 
 
 urlUpdate : Navigation.Location -> Model -> ( Model, Cmd Msg )
@@ -145,8 +158,12 @@ urlUpdate loc model =
                     model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 
         Just (NewPostPage as route) ->
-            { model | route = route }
-                ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
+            case model.jwt of
+                Just jwt ->
+                    { model | route = route }
+                        ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
+                Nothing ->
+                    model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 
         Just (LoginPage as route) ->
             { model | route = route }

@@ -76,16 +76,15 @@ all =
         , describe "test component's update function"
             [ test "a request failed" <|
                 \() ->
-                    EditPost.update
-                        (EditPost.HandlePostRetrieved (Result.Err response401))
-                        (EditPost.Model Nothing Nothing Nothing)
-                    |> Expect.equal (
-                          (EditPost.Model
-                            Nothing
-                            Nothing
-                            (Just "You shall not pass"))
-                        , Cmd.none )
-
+                    let (mdl, _) = (
+                        EditPost.update
+                            (EditPost.HandlePostRetrieved (Result.Err response401))
+                            (EditPost.Model Nothing Nothing Nothing))
+                    in mdl
+                    |> Expect.equal (EditPost.Model
+                        Nothing
+                        Nothing
+                        (Just "You shall not pass"))
             ]
         ]
 

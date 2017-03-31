@@ -29,9 +29,6 @@ mountCmd : Cmd Msg
 mountCmd = Cmd.none
 
 port save : String -> Cmd msg
-port load : (String -> msg) -> Sub msg
-port doload : () -> Cmd msg
-
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

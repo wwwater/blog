@@ -1,4 +1,4 @@
-module EditPost         exposing ( Model
+port module EditPost    exposing ( Model
                                  , Msg (..)
                                  , init
                                  , view
@@ -18,6 +18,9 @@ import Html.Attributes  exposing ( class
 import Html.Events      exposing ( onClick, onInput )
 import Http
 import Time             exposing ( Time, minute )
+
+
+port remove : () -> Cmd msg
 
 
 type alias Model =
@@ -50,22 +53,23 @@ mountCmd id =
             ServerApi.getPost postId HandlePostRetrieved
         Nothing -> Cmd.none
 
-getErrorMessage : Http.Error -> String
-getErrorMessage err =
+getError : Http.Error -> (String, Maybe Int)
+getError err =
     case err of
         Http.BadStatus badStatus ->
-            case badStatus.status.code of
+            (case badStatus.status.code of
                 404 -> "Post not found!"
                 401 -> badStatus.body
                 _ -> badStatus.status.message
+            , Just badStatus.status.code)
         Http.BadUrl text ->
-            "Bad url"  ++ text
+            ("Bad url " ++ text, Nothing)
         Http.Timeout ->
-            "Timeout"
+            ("Timeout", Nothing)
         Http.BadPayload message _ ->
-            "Bad payload " ++ message
+            ("Bad payload " ++ message, Nothing)
         Http.NetworkError ->
-            "Network error"
+            ("Network error", Nothing)
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
@@ -82,13 +86,18 @@ update action model =
                     )
 
                 Result.Err err ->
-                    let errorAsString = getErrorMessage err
+                    let (errorAsString, code) = getError err
                         _ = Debug.log "An error occured in request" errorAsString in
                     ( { model |
                           postOnServer = Nothing
                         , postOnClient = Nothing
                         , error = Just errorAsString }
-                    , Cmd.none
+                    , case code of
+                        Just code ->
+                            case code of
+                                401 -> remove ()
+                                _ -> Cmd.none
+                        Nothing -> Cmd.none
                     )
         ChangePostTitleOnClient newTitle ->
             case model.postOnClient of
