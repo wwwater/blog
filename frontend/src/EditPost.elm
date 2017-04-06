@@ -38,11 +38,14 @@ type Msg
     | Tick Jwt Time
 
 
+emptyPost : Post
+emptyPost = { id = Nothing, title = Just "", content = Just "" }
+
 init : Model
 init =
     Model
         Nothing
-        (Just { id = Nothing, title = Just "", content = Just "" })
+        (Just emptyPost)
         Nothing
 
 
@@ -73,6 +76,16 @@ getError err =
 
 onlyUpdateModel : Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
 onlyUpdateModel model = ( model, Cmd.none, GlobalMessages.None )
+
+requiredPostSaving : Model -> Bool
+requiredPostSaving model =
+    case model.postOnClient of
+        Just post ->
+            case model.postOnServer of
+                Just postOnServer -> post /= postOnServer
+                Nothing -> post /= emptyPost
+        Nothing -> False
+
 
 update : Msg -> Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
 update action model =
@@ -123,10 +136,10 @@ update action model =
         Tick jwt _ ->
             case model.postOnClient of
                 Just post ->
-                    if model.postOnClient /= model.postOnServer
-                    then let _ = Debug.log "Updating post on server by timer" post.id
-                        in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
-                    else onlyUpdateModel model
+                    if requiredPostSaving model
+                        then let _ = Debug.log "Updating post on server by timer" post.id
+                            in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
+                        else onlyUpdateModel model
                 Nothing -> onlyUpdateModel model
 
 

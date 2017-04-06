@@ -138,7 +138,6 @@ urlUpdate loc model =
                 ! [ Cmd.map PostMsg <| Post.mountCmd postId ]
 
         Just ((EditPostPage postId) as route) ->
-            let _ = Debug.log "Jwt in global model is" model.jwt in
             case model.jwt of
                 Just jwt ->
                     { model | route = route }
@@ -149,7 +148,7 @@ urlUpdate loc model =
         Just (NewPostPage as route) ->
             case model.jwt of
                 Just jwt ->
-                    { model | route = route }
+                    { model | route = route, editPostModel = EditPost.init }
                         ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
                 Nothing ->
                     model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
