@@ -19,7 +19,10 @@ import Http
 import Time             exposing ( Time, minute )
 
 import ServerApi        exposing ( Post, Jwt )
-import GlobalMessages   exposing ( Msg(..) )
+import Global           exposing ( Msg(..)
+                                 , handleServerErrorForPost
+                                 , onlyUpdateModel )
+import Routes
 
 
 
@@ -56,26 +59,6 @@ mountCmd id =
             ServerApi.getPost postId HandlePostRetrieved
         Nothing -> Cmd.none
 
-getError : Http.Error -> (String, Maybe Int)
-getError err =
-    case err of
-        Http.BadStatus badStatus ->
-            (case badStatus.status.code of
-                404 -> "Post not found!"
-                401 -> badStatus.body
-                _ -> badStatus.status.message
-            , Just badStatus.status.code)
-        Http.BadUrl text ->
-            ("Bad url " ++ text, Nothing)
-        Http.Timeout ->
-            ("Timeout", Nothing)
-        Http.BadPayload message _ ->
-            ("Bad payload " ++ message, Nothing)
-        Http.NetworkError ->
-            ("Network error", Nothing)
-
-onlyUpdateModel : Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
-onlyUpdateModel model = ( model, Cmd.none, GlobalMessages.None )
 
 requiredPostSaving : Model -> Bool
 requiredPostSaving model =
@@ -87,7 +70,7 @@ requiredPostSaving model =
         Nothing -> False
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
 update action model =
     case action of
         HandlePostRetrieved res ->
@@ -99,21 +82,10 @@ update action model =
                         , postOnClient = Just post
                         , error = Nothing }
 
-                Result.Err err ->
-                    let (errorAsString, code) = getError err
-                        _ = Debug.log "An error occured in request" errorAsString in
-                    ( { model |
-                          postOnServer = Nothing
-                        , postOnClient = Nothing
-                        , error = Just errorAsString }
-                    , Cmd.none
-                    , case code of
-                        Just code ->
-                            case code of
-                                401 -> GlobalMessages.RemoveJwt
-                                _ -> GlobalMessages.None
-                        Nothing -> GlobalMessages.None
-                    )
+                Result.Err err -> handleServerErrorForPost
+                    { model | postOnServer = Nothing , postOnClient = Nothing }
+                    err
+
         ChangePostTitleOnClient newTitle ->
             case model.postOnClient of
                 Just justPost ->
@@ -130,7 +102,7 @@ update action model =
             case model.postOnClient of
                 Just post ->
                     let _ = Debug.log "Updating post on server" post.id
-                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
+                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved, Global.None)
                 Nothing -> onlyUpdateModel model
 
         Tick jwt _ ->
@@ -138,7 +110,7 @@ update action model =
                 Just post ->
                     if requiredPostSaving model
                         then let _ = Debug.log "Updating post on server by timer" post.id
-                            in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
+                            in (model, ServerApi.updatePost post jwt HandlePostRetrieved, Global.None)
                         else onlyUpdateModel model
                 Nothing -> onlyUpdateModel model
 

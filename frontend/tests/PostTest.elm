@@ -15,15 +15,23 @@ all =
         [ describe "testing HTML"
             [ fuzz string "a post displays content" <|
                 \str ->
-                    Post.view (Post.Model (Just (testPost str))) Nothing
+                    Post.view (testModel str) Nothing
                     |> Query.fromHtml
                     |> Query.has [ text str ]
             , test "a post displays 'edit' button when supplied with JWT" <|
                 \() ->
-                    Post.view (Post.Model (Just (testPost ""))) (Just "")
+                    Post.view (testModel "") (Just "")
                     |> Query.fromHtml
                     |> Query.find [ class "glyphicon-pencil" ]
                     |> Query.has [ tag "a" ]
+            , test "a post displays 'delete' button when supplied with JWT" <|
+                \() ->
+                    Post.view (testModel "") (Just "")
+                    |> Query.fromHtml
+                    |> Query.find [ class "glyphicon-trash" ]
+                    |> Query.has [ tag "span" ]
             ]
         ]
 
+testModel : String -> Post.Model
+testModel postContent  = Post.Model (Just (testPost postContent)) Nothing

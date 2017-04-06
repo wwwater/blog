@@ -12,7 +12,7 @@ import EditPost
 import Login
 import Menu
 import Routes           exposing (..)
-import GlobalMessages   exposing (Msg(..))
+import Global           exposing (Msg(..))
 
 port save : String -> Cmd msg
 port doload : () -> Cmd msg
@@ -49,7 +49,7 @@ type Msg
     | Navigate String
     | UrlChange Navigation.Location
     | Load String
-    | GlobalMsg GlobalMessages.Msg
+    | GlobalMsg Global.Msg
 
 
 initialModel : Model
@@ -78,8 +78,9 @@ update msg model =
             in { model | postsModel = subMdl } ! [ Cmd.map PostsMsg subCmd ]
 
         PostMsg m ->
-            let ( subMdl, subCmd ) = Post.update m model.postModel
-            in { model | postModel = subMdl } ! [ Cmd.map PostMsg subCmd ]
+            let ( subMdl, subCmd, globalMsg ) = Post.update m model.postModel
+                ( mdl, cmd ) = update (GlobalMsg globalMsg) { model | postModel = subMdl }
+            in mdl ! [ Cmd.map PostMsg subCmd, cmd ]
 
         EditPostMsg m ->
             let

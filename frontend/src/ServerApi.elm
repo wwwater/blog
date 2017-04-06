@@ -53,6 +53,19 @@ updatePost post jwt msg =
         }
         |> Http.send msg
 
+deletePost : Int -> Jwt -> (Result Http.Error String -> msg) -> Cmd msg
+deletePost postId jwt msg =
+    Http.request
+        { method = "DELETE"
+        , headers = [ Http.header "jwt" jwt ]
+        , url = baseUrl ++ "/post/" ++ (toString postId)
+        , body = Http.emptyBody
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send msg
+
 postsDecoder : JsonD.Decoder (List Post)
 postsDecoder =
     JsonD.list postDecoder

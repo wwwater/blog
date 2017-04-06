@@ -2,11 +2,11 @@ module Login exposing (Model, Msg, init, view, update, mountCmd)
 
 import ServerApi        exposing (..)
 import Html             exposing (..)
-import Html.Attributes  exposing (style, value, placeholder, maxlength, type_)
-import Html.Events      exposing (onInput, onClick)
+import Html.Attributes  exposing ( style, value, placeholder, maxlength, type_ )
+import Html.Events      exposing ( onInput, onClick )
 import Http
-import Navigation       exposing (back)
-import GlobalMessages   exposing (Msg(..))
+import Navigation       exposing ( back )
+import Global           exposing ( Msg(..) )
 
 type alias Model =
     { credentials : Credentials }
@@ -28,7 +28,7 @@ mountCmd : Cmd Msg
 mountCmd = Cmd.none
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
 update action model =
     case action of
         HandleJwtReceived res ->
@@ -37,27 +37,27 @@ update action model =
                     let _ = Debug.log "Received jwt" jwt in
                     ( { model | credentials = {username = "", password = ""} }
                     , Navigation.back 1
-                    , GlobalMessages.SaveJwt jwt
+                    , Global.SaveJwt jwt
                     )
 
                 Result.Err err ->
                     let _ = Debug.log "Error getting jwt" err in
                     ( { model | credentials = {username = "", password = ""} }
                     , Cmd.none
-                    , GlobalMessages.None
+                    , Global.None
                     )
         ChangeUsername newUsername ->
             let creds = model.credentials in
             ( { model | credentials = { creds | username = newUsername } }
             , Cmd.none
-            , GlobalMessages.None
+            , Global.None
             )
 
         ChangePassword newPassword ->
             let creds = model.credentials in
             ( { model | credentials = { creds | password = newPassword } }
             , Cmd.none
-            , GlobalMessages.None
+            , Global.None
             )
 
         SubmitCredentials ->
@@ -67,12 +67,12 @@ update action model =
                     in (
                         model
                         , ServerApi.getJwt model.credentials HandleJwtReceived
-                        , GlobalMessages.None
+                        , Global.None
                         )
             else (
                 model
                 , Cmd.none
-                , GlobalMessages.None
+                , Global.None
                 )
 
 
