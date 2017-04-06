@@ -1,16 +1,15 @@
-port module Login exposing (Model, Msg, init, view, update, mountCmd)
+module Login exposing (Model, Msg, init, view, update, mountCmd)
 
-import ServerApi exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (style, value, placeholder, maxlength, type_)
-import Html.Events exposing (onInput, onClick)
+import ServerApi        exposing (..)
+import Html             exposing (..)
+import Html.Attributes  exposing (style, value, placeholder, maxlength, type_)
+import Html.Events      exposing (onInput, onClick)
 import Http
-import Navigation exposing (back)
+import Navigation       exposing (back)
+import GlobalMessages   exposing (Msg(..))
 
 type alias Model =
-    { credentials : Credentials
-    , jwt : Maybe Jwt
-    }
+    { credentials : Credentials }
 
 
 type Msg
@@ -22,56 +21,61 @@ type Msg
 
 init : Model
 init =
-    Model {username = "", password = ""} Nothing
+    Model {username = "", password = ""}
 
 
 mountCmd : Cmd Msg
 mountCmd = Cmd.none
 
-port save : String -> Cmd msg
 
-
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
 update action model =
     case action of
         HandleJwtReceived res ->
             case res of
                 Result.Ok jwt ->
                     let _ = Debug.log "Received jwt" jwt in
-                    ( { model |
-                        jwt = Just jwt,
-                        credentials = {username = "", password = ""} }
-                    , Cmd.batch[ save jwt, Navigation.back 1]
+                    ( { model | credentials = {username = "", password = ""} }
+                    , Navigation.back 1
+                    , GlobalMessages.SaveJwt jwt
                     )
 
                 Result.Err err ->
                     let _ = Debug.log "Error getting jwt" err in
-                    ( { model |
-                        jwt = Nothing,
-                        credentials = {username = "", password = ""} }
+                    ( { model | credentials = {username = "", password = ""} }
                     , Cmd.none
+                    , GlobalMessages.None
                     )
         ChangeUsername newUsername ->
             let creds = model.credentials in
             ( { model | credentials = { creds | username = newUsername } }
             , Cmd.none
+            , GlobalMessages.None
             )
 
         ChangePassword newPassword ->
             let creds = model.credentials in
             ( { model | credentials = { creds | password = newPassword } }
             , Cmd.none
+            , GlobalMessages.None
             )
 
         SubmitCredentials ->
             if model.credentials.username /= "" && model.credentials.password /= ""
-            then let _ = Debug.log "Submitting credentials for" model.credentials.username
-             in (model, ServerApi.getJwt model.credentials HandleJwtReceived)
-            else (model, Cmd.none)
+                then
+                    let _ = Debug.log "Submitting credentials for" model.credentials.username
+                    in (
+                        model
+                        , ServerApi.getJwt model.credentials HandleJwtReceived
+                        , GlobalMessages.None
+                        )
+            else (
+                model
+                , Cmd.none
+                , GlobalMessages.None
+                )
 
 
-
------- VIEW ------
 
 
 view : Model -> Html Msg

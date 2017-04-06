@@ -1,4 +1,4 @@
-port module EditPost    exposing ( Model
+module EditPost         exposing ( Model
                                  , Msg (..)
                                  , init
                                  , view
@@ -6,7 +6,6 @@ port module EditPost    exposing ( Model
                                  , mountCmd
                                  , subscriptions )
 
-import ServerApi        exposing ( Post, Jwt )
 import Html             exposing (..)
 import Html.Attributes  exposing ( class
                                  , href
@@ -19,8 +18,9 @@ import Html.Events      exposing ( onClick, onInput )
 import Http
 import Time             exposing ( Time, minute )
 
+import ServerApi        exposing ( Post, Jwt )
+import GlobalMessages   exposing ( Msg(..) )
 
-port remove : () -> Cmd msg
 
 
 type alias Model =
@@ -71,19 +71,20 @@ getError err =
         Http.NetworkError ->
             ("Network error", Nothing)
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+onlyUpdateModel : Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
+onlyUpdateModel model = ( model, Cmd.none, GlobalMessages.None )
+
+update : Msg -> Model -> ( Model, Cmd Msg, GlobalMessages.Msg )
 update action model =
     case action of
         HandlePostRetrieved res ->
             case res of
                 Result.Ok post ->
                     let _ = Debug.log "Received updated post" post.id in
-                    ( { model |
+                    onlyUpdateModel { model |
                           postOnServer = Just post
                         , postOnClient = Just post
                         , error = Nothing }
-                    , Cmd.none
-                    )
 
                 Result.Err err ->
                     let (errorAsString, code) = getError err
@@ -92,48 +93,45 @@ update action model =
                           postOnServer = Nothing
                         , postOnClient = Nothing
                         , error = Just errorAsString }
+                    , Cmd.none
                     , case code of
                         Just code ->
                             case code of
-                                401 -> remove ()
-                                _ -> Cmd.none
-                        Nothing -> Cmd.none
+                                401 -> GlobalMessages.RemoveJwt
+                                _ -> GlobalMessages.None
+                        Nothing -> GlobalMessages.None
                     )
         ChangePostTitleOnClient newTitle ->
             case model.postOnClient of
                 Just justPost ->
-                    ( { model | postOnClient = Just { justPost | title = Just newTitle } }
-                    , Cmd.none
-                    )
-                Nothing -> (model, Cmd.none)
+                    onlyUpdateModel { model | postOnClient = Just { justPost | title = Just newTitle } }
+                Nothing -> onlyUpdateModel model
 
         ChangePostContentOnClient newContent ->
             case model.postOnClient of
                 Just justPost ->
-                    ( { model | postOnClient = Just { justPost | content = Just newContent } }
-                    , Cmd.none
-                    )
-                Nothing -> (model, Cmd.none)
+                    onlyUpdateModel { model | postOnClient = Just { justPost | content = Just newContent } }
+                Nothing -> onlyUpdateModel model
 
         UpdatePostOnServer jwt ->
             case model.postOnClient of
                 Just post ->
                     let _ = Debug.log "Updating post on server" post.id
-                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved)
-                Nothing -> (model, Cmd.none)
+                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
+                Nothing -> onlyUpdateModel model
+
         Tick jwt _ ->
             case model.postOnClient of
                 Just post ->
                     if model.postOnClient /= model.postOnServer
                     then let _ = Debug.log "Updating post on server by timer" post.id
-                        in (model, ServerApi.updatePost post jwt HandlePostRetrieved)
-                    else (model, Cmd.none)
-                Nothing -> (model, Cmd.none)
+                        in (model, ServerApi.updatePost post jwt HandlePostRetrieved, GlobalMessages.None)
+                    else onlyUpdateModel model
+                Nothing -> onlyUpdateModel model
 
 
 
 
--- SUBSCRIPTIONS --
 
 subscriptions : Model -> Jwt -> Sub Msg
 subscriptions model jwt =
@@ -142,7 +140,6 @@ subscriptions model jwt =
 
 
 
------- VIEW ------
 
 renderUpdateButton : Model -> Jwt -> Html Msg
 renderUpdateButton model jwt =

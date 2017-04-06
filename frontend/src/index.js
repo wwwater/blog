@@ -25,6 +25,5 @@ elm.ports.doload.subscribe(function() {
 elm.ports.remove.subscribe(function() {
   console.log("remove port called");
   localStorage.removeItem(storageKey);
-  elm.ports.load.send("");
 });
 

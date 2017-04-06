@@ -36,4 +36,3 @@ all =
 testLoginModel : Login.Model
 testLoginModel = Login.Model
     (ServerApi.Credentials "user" "pass")
-    Nothing

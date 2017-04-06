@@ -76,7 +76,7 @@ all =
         , describe "test component's update function"
             [ test "a request failed" <|
                 \() ->
-                    let (mdl, _) = (
+                    let (mdl, _, _) = (
                         EditPost.update
                             (EditPost.HandlePostRetrieved (Result.Err response401))
                             (EditPost.Model Nothing Nothing Nothing))

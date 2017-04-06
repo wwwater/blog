@@ -1,19 +1,23 @@
 port module Main exposing (..)
 
+import Html             exposing (..)
+import Html.Attributes  exposing (..)
+import Html
+import Navigation
+
+import ServerApi        exposing (Jwt)
 import Posts
 import Post
 import EditPost
 import Login
 import Menu
-import Routes exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html
-import Navigation
-import ServerApi exposing (Jwt)
+import Routes           exposing (..)
+import GlobalMessages   exposing (Msg(..))
 
+port save : String -> Cmd msg
 port doload : () -> Cmd msg
 port load : (String -> msg) -> Sub msg
+port remove : () -> Cmd msg
 
 
 main : Program Never Model Msg
@@ -45,6 +49,7 @@ type Msg
     | Navigate String
     | UrlChange Navigation.Location
     | Load String
+    | GlobalMsg GlobalMessages.Msg
 
 
 initialModel : Model
@@ -64,52 +69,33 @@ init loc =
     in (mdl, Cmd.batch[ cmd, doload () ])
 
 
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
 
         PostsMsg m ->
-            let
-                ( subMdl, subCmd ) =
-                    Posts.update m model.postsModel
-            in
-                { model | postsModel = subMdl }
-                    ! [ Cmd.map PostsMsg subCmd ]
+            let ( subMdl, subCmd ) = Posts.update m model.postsModel
+            in { model | postsModel = subMdl } ! [ Cmd.map PostsMsg subCmd ]
 
         PostMsg m ->
-            let
-                ( subMdl, subCmd ) =
-                    Post.update m model.postModel
-            in
-                { model | postModel = subMdl }
-                    ! [ Cmd.map PostMsg subCmd ]
+            let ( subMdl, subCmd ) = Post.update m model.postModel
+            in { model | postModel = subMdl } ! [ Cmd.map PostMsg subCmd ]
 
         EditPostMsg m ->
             let
-                ( subMdl, subCmd ) =
-                    EditPost.update m model.editPostModel
-            in
-                { model | editPostModel = subMdl }
-                    ! [ Cmd.map EditPostMsg subCmd ]
+                ( subMdl, subCmd, globalMsg ) = EditPost.update m model.editPostModel
+                ( mdl, cmd ) = update (GlobalMsg globalMsg) { model | editPostModel = subMdl }
+            in mdl ! [ Cmd.map EditPostMsg subCmd, cmd ]
 
         LoginMsg m ->
             let
-                ( subMdl, subCmd ) =
-                    Login.update m model.loginModel
-            in
-                { model |
-                  loginModel = subMdl,
-                  jwt = subMdl.jwt }
-                    ! [ Cmd.map LoginMsg subCmd ]
+                ( subMdl, subCmd, globalMsg ) = Login.update m model.loginModel
+                ( mdl, cmd ) = update (GlobalMsg globalMsg) { model | loginModel = subMdl }
+            in mdl ! [ Cmd.map LoginMsg subCmd, cmd ]
 
         MenuMsg m ->
-            let
-                ( subMdl, subCmd ) =
-                    Menu.update m {}
-            in
-                model
-                    ! [ Cmd.map MenuMsg subCmd ]
+            let ( subMdl, subCmd ) = Menu.update m {}
+            in model ! [ Cmd.map MenuMsg subCmd ]
 
         UrlChange loc ->
             urlUpdate loc model
@@ -117,12 +103,15 @@ update msg model =
         Navigate url ->
             model ! [ Navigation.newUrl url ]
 
-        Load jwtFromStorage ->
-            let _ = Debug.log "Loaded jwt from local storage" jwtFromStorage in
-            ( { model |
-                jwt = if jwtFromStorage /= "" then Just jwtFromStorage else Nothing }
-            , Cmd.none )
+        Load jwt ->
+            let _ = Debug.log "Loaded jwt from local storage" jwt in
+            { model | jwt = Just jwt } ! []
 
+        GlobalMsg m ->
+            case m of
+                None -> model ! []
+                SaveJwt jwt -> { model | jwt = Just jwt } ! [ save jwt ]
+                RemoveJwt -> { model | jwt = Nothing } ! [ remove () ]
 
 
 subscriptions : Model -> Sub Msg
