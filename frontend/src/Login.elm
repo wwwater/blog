@@ -85,7 +85,7 @@ view model =
                 , ("flex-direction", "column")
                 , ("justify-content", "center")
                 , ("align-items", "center")
-                , ("min-height", "100vh") ] ]
+                , ("flex-grow", "1") ] ]
         [ input [ style [ ("width", "400px")
                         , ("border-radius", "5px")
                         , ("padding", "8px")

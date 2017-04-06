@@ -94,7 +94,8 @@ view model jwt =
     div [ style [ ("background-color", "#777")
                 , ("display", "flex")
                 , ("justify-content", "center")
-                , ("min-height", "100vh") ] ]
+                , ("flex-grow", "1")
+                ] ]
         [ case model.post of
             Just post ->
                 div [ style [ ("padding", "32px")

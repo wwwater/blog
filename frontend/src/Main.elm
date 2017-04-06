@@ -161,7 +161,10 @@ urlUpdate loc model =
 
 
 view : Model -> Html Msg
-view model = div []
+view model = div [ style [ ("display", "flex")
+                         , ("flex-direction", "column")
+                         , ("min-height", "100vh")
+                         ] ]
     [ Html.map MenuMsg <| Menu.view model.jwt
     , contentView model
     ]

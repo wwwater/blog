@@ -37,22 +37,25 @@ update action model =
 
 
 ------ VIEW ------
-
+iconStyle : Attribute msg
+iconStyle = style [
+      ("color", "#fff")
+    , ("margin-left", "24px")
+    , ("cursor", "pointer")
+    , ("box-shadow", "2px 2px 15px 1px #333")
+    , ("padding", "10px")
+    , ("border-radius", "15px")
+    , ("background", "#555")
+    ]
 
 loginOrNewPostIcon : Maybe Jwt -> Html Msg
 loginOrNewPostIcon jwt =
     case jwt of
-        Just _ -> a [ style [ ("color", "#fff")
-                              , ("margin-left", "24px")
-                              , ("cursor", "pointer")
-                              ]
+        Just _ -> a [ iconStyle
                       , class "glyphicon glyphicon-pencil"
                       , onClick GoToNewPost
                       ] []
-        Nothing -> a [ style [ ("color", "#fff")
-                              , ("margin-left", "24px")
-                              , ("cursor", "pointer")
-                              ]
+        Nothing -> a [ iconStyle
                       , class "glyphicon glyphicon-log-in"
                       , onClick GoToLogin
                       ] []
@@ -66,10 +69,7 @@ view jwt = div [ style [ ("background-color", "#777")
                          , ("padding", "16px 16px 0 16px") ] ]
                  [ loginOrNewPostIcon jwt
                  , a
-                     [ style [ ("color", "#fff")
-                             , ("margin-left", "24px")
-                             , ("cursor", "pointer")
-                             ]
+                     [ iconStyle
                      , class "glyphicon glyphicon-home"
                      , onClick GoToPosts
                      ] []

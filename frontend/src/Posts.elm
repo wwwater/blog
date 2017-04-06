@@ -58,10 +58,10 @@ view : Model -> Html Msg
 view model =
     div [ style [ ("background-color", "#777")
         , ("display", "flex")
-        , ("flex-direction", "col")
         , ("justify-content", "center")
-        , ("min-height", "100vh") ] ]
-        [ div [ style [ ("width", "800px") ] ]
+        , ("flex-grow", "1") ] ]
+        [ div [ style [ ("width", "800px")
+                      , ("margin", "0 32px") ] ]
             (List.map postPanel (List.reverse model.posts))
         ]
 
@@ -75,7 +75,9 @@ postPanel post =
     div
         [ style [ ("cursor", "pointer")
                 , ("padding", "32px")
-                , ("margin", "32px")
+                , ("margin", "32px 0")
+                , ("box-shadow", "2px 2px 15px 1px #333")
+                , ("border-radius", "2px")
                 , ("background-color", "#333") ]
         , onClick (GoToPost (Maybe.withDefault 0 post.id))
         ]
