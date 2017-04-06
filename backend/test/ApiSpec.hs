@@ -4,7 +4,7 @@
 module ApiSpec (main, spec) where
 
 import Test.Hspec               (hspec, Spec, beforeAll, afterAll, after, describe, it)
-import Test.Hspec.Wai           (get, request, shouldRespondWith, matchStatus)
+import Test.Hspec.Wai           (get, request, shouldRespondWith, matchStatus, WaiSession (..))
 import Network.Wai.Test         (SResponse (..))
 import Test.Hspec.Wai.Internal  (withApplication)
 import Crypto.PasswordStore     (makePassword)
@@ -104,13 +104,14 @@ spec = beforeAll testConnect $
                 (createCredentialsJson "test" "wrongPassword")
             `shouldRespondWith` 401
 
+
+  describe "test /post endpoints that require JWT" $
+    after (\connection -> Sql.execute_ connection "DROP TABLE user") $ do
+
     it "can create a new post using JWT" $ \connection -> do
       addTestUserToDB connection
       withApplication (App.app connection) $ do
-        response <- request "POST"
-                            "/jwt"
-                            [("Content-Type", "application/json")]
-                            (createCredentialsJson "test" "testPassword")
+        response <- makeJwtRequest
         request "POST"
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
@@ -121,15 +122,24 @@ spec = beforeAll testConnect $
       addTestUserToDB connection
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
       withApplication (App.app connection) $ do
-        response <- request "POST"
-                            "/jwt"
-                            [("Content-Type", "application/json")]
-                            (createCredentialsJson "test" "testPassword")
+        response <- makeJwtRequest
         request "POST"
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
                 (createPostJson (Just 3) "Updated post" "Content")
           `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":3,\"postTitle\":\"Updated post\"}"
+
+    it "can delete a post using JWT" $ \connection -> do
+      addTestUserToDB connection
+      Sql.execute_ connection "INSERT OR IGNORE INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
+      withApplication (App.app connection) $ do
+        jwtResponse <- makeJwtRequest
+        _ <- request
+          "DELETE"
+          "/post/3"
+          [("Content-Type", "application/json"), ("jwt", getJwtFromResponse jwtResponse)]
+          ""
+        get "/post/3" `shouldRespondWith` 404
 
     it "cannot create a new post using wrong JWT" $ \connection -> do
       Storage.createSchema connection
@@ -165,4 +175,11 @@ getJwtFromResponse response =
   case decode (simpleBody response) of
     Just jwt -> Char8.pack $ Model.token jwt
     Nothing -> ""
+
+makeJwtRequest :: WaiSession SResponse
+makeJwtRequest = request
+  "POST"
+  "/jwt"
+  [("Content-Type", "application/json")]
+  (createCredentialsJson "test" "testPassword")
 

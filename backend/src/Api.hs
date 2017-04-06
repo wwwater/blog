@@ -10,7 +10,7 @@ import Servant                              (Proxy (..), throwError)
 import Servant.Server                       (Server, Handler)
 import Servant.API.Alternative              ((:<|>) (..))
 import Servant.API.Sub                      ((:>))
-import Servant.API.Verbs                    (Get, Post)
+import Servant.API.Verbs                    (Get, Post, DeleteNoContent)
 import Servant.API.ReqBody                  (ReqBody)
 import Servant.API.Capture                  (Capture)
 import Servant.API.ContentTypes             (JSON)
@@ -58,23 +58,29 @@ type PostAPI =
        Get '[JSON] [M.Post]
   :<|> Capture "postId" Int :> Get '[JSON] M.Post
   :<|> Header "jwt" String :> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
+  :<|> Header "jwt" String :> Capture "postId" Int :> DeleteNoContent '[JSON] ()
 
 
 postServer :: Sql.Connection -> Server PostAPI
 postServer conn =
-  getAllPosts :<|> getPost :<|> updatePost
+  getAllPosts :<|> getPost :<|> updatePost :<|> deletePost
 
   where
     getAllPosts = liftIO $ S.selectAllPosts conn
     getPost postId = liftIOMaybeToHandler err404 $ S.selectPost conn postId
-    updatePost jwt post =
-          case jwt of
-            Just jwtToken -> do
-              valid <- liftIO $ verifyJwt "meow" jwtToken
-              if valid
-                then updateAuthorizedPost conn post
-                else throwError err401 { errBody = "JWT token has expired or not valid." }
-            Nothing -> throwError err401 { errBody = "Please provide JWT token in header." }
+    updatePost jwt post = wrapInJwtCheck jwt $ updateAuthorizedPost conn post
+    deletePost jwt postId = wrapInJwtCheck jwt $ liftIO $ S.deletePost conn postId
+
+
+wrapInJwtCheck :: Maybe String -> Handler a -> Handler a
+wrapInJwtCheck jwt callback =
+  case jwt of
+    Just jwtToken -> do
+      valid <- liftIO $ verifyJwt "meow" jwtToken
+      if valid
+        then callback
+        else throwError err401 { errBody = "JWT token has expired or not valid." }
+    Nothing -> throwError err401 { errBody = "Please provide JWT token in header." }
 
 
 updateAuthorizedPost :: Sql.Connection -> M.Post -> Handler M.Post
@@ -82,7 +88,6 @@ updateAuthorizedPost conn post = liftIOMaybeToHandler err404 $
   case M.postId post of
     Just _ -> S.updatePost conn post
     Nothing -> S.insertPost conn post
-
 
 
 

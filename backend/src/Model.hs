@@ -11,16 +11,16 @@ data Post = Post
   { postId :: Maybe Int
   , postTitle :: Maybe String
   , postContent :: Maybe String
-  } deriving (Eq, Show, Generic)
+  } deriving (Generic)
 
 data Credentials = Credentials
   { username :: String
   , password :: String
-  } deriving (Eq, Show, Generic)
+  } deriving (Generic)
 
 data Jwt = Jwt
   { token :: String
-  } deriving (Eq, Show, Generic)
+  } deriving (Generic)
 
 
 instance Sql.FromRow Post where

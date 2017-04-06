@@ -44,6 +44,10 @@ updatePost conn post = do
       0 -> return Nothing
       _ -> return $ Just $ head updated
 
+deletePost :: Sql.Connection -> Int -> IO ()
+deletePost conn postId = do
+  Sql.execute conn "DELETE FROM post WHERE id = ?" (Sql.Only postId)
+
 
 getUserPassword :: Sql.Connection -> String -> IO (Maybe String)
 getUserPassword conn username = do
