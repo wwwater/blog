@@ -23,7 +23,7 @@ all =
                     Post.view (testModel "") (Just "")
                     |> Query.fromHtml
                     |> Query.find [ class "glyphicon-pencil" ]
-                    |> Query.has [ tag "a" ]
+                    |> Query.has [ tag "span" ]
             , test "a post displays 'delete' button when supplied with JWT" <|
                 \() ->
                     Post.view (testModel "") (Just "")

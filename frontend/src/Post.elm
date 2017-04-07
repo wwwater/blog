@@ -16,6 +16,7 @@ import Global           exposing ( Msg (..)
                                  )
 import ServerApi        exposing (..)
 import Routes
+import Styles           exposing (..)
 
 
 
@@ -98,12 +99,7 @@ view model jwt =
                 ] ]
         [ case model.post of
             Just post ->
-                div [ style [ ("padding", "32px")
-                            , ("margin", "32px")
-                            , ("width", "800px")
-                            , ("display", "flex")
-                            , ("flex-direction", "column")
-                            , ("background-color", "#333") ] ]
+                div [ postStyle ]
                     [ h2 [ style [ ("color", "#ddd") ] ]
                         [ text (Maybe.withDefault "" post.title) ]
                     , div [ style [ ("color", "#fff")
@@ -118,21 +114,18 @@ view model jwt =
                                   ] ]
                         [ case jwt of
                             Just jwt -> div []
-                                [ a
-                                    [ style [ ("color", "#fff")
-                                            , ("margin-left", "16px")
-                                            , ("cursor", "pointer")
-                                            ]
+                                [ span
+                                    [ iconStyle
                                     , class "glyphicon glyphicon-pencil"
                                     , title "Edit Post"
                                     , onClick (GoToEditPost (Maybe.withDefault 0 post.id))
                                     ] []
-                                , span [ style [ ("color", "#fff")
-                                               , ("margin-left", "16px")
-                                               , ("cursor", "pointer") ]
-                                       , class "glyphicon glyphicon-trash"
-                                       , title "Delete post"
-                                       , onClick (DeletePostOnServer jwt) ] []
+                                , span
+                                    [ iconStyle
+                                    , class "glyphicon glyphicon-trash"
+                                    , title "Delete post"
+                                    , onClick (DeletePostOnServer jwt)
+                                    ] []
                                 ]
                             Nothing -> div [] []
                         ]

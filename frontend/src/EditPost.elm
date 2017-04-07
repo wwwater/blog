@@ -23,7 +23,7 @@ import Global           exposing ( Msg(..)
                                  , handleServerErrorForPost
                                  , onlyUpdateModel )
 import Routes
-
+import Styles           exposing (..)
 
 
 type alias Model =
@@ -129,8 +129,7 @@ subscriptions model jwt =
 renderUpdateButton : Model -> Jwt -> Html Msg
 renderUpdateButton model jwt =
     if model.postOnClient /= model.postOnServer
-    then span [ style [ ("color", "#fff")
-                      , ("cursor", "pointer") ]
+    then span [ iconStyle
               , class "glyphicon glyphicon-floppy-disk"
               , title "Save changes"
               , onClick (UpdatePostOnServer jwt) ] []
@@ -146,12 +145,7 @@ view model jwt =
                 ] ]
         [ case model.postOnClient of
             Just post ->
-                div [ style [ ("padding", "32px")
-                            , ("margin", "32px")
-                            , ("width", "800px")
-                            , ("display", "flex")
-                            , ("flex-direction", "column")
-                            , ("background-color", "#333") ] ]
+                div [ postStyle ]
                     [ textarea [ style [ ("color", "#ddd")
                                        , ("width", "100%")
                                        , ("background-color", "inherit")
@@ -177,11 +171,7 @@ view model jwt =
                                , maxlength 10000
                                , placeholder "..type here the content of the post"
                                , onInput ChangePostContentOnClient ] []
-                    , div [ style [ ("display", "flex")
-                                  , ("align-items", "baseline")
-                                  , ("align-self", "flex-end")
-                                  , ("font-size", "18px")
-                                  ] ]
+                    , div [ style [ ("align-self", "flex-end") ] ]
                         [ renderUpdateButton model jwt ]
                     ]
             Nothing ->

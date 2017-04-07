@@ -1,12 +1,14 @@
 module Login exposing (Model, Msg, init, view, update, mountCmd)
 
-import ServerApi        exposing (..)
 import Html             exposing (..)
 import Html.Attributes  exposing ( style, value, placeholder, maxlength, type_ )
 import Html.Events      exposing ( onInput, onClick )
 import Http
 import Navigation       exposing ( back )
+
+import ServerApi        exposing (..)
 import Global           exposing ( Msg(..) )
+import Styles           exposing (..)
 
 type alias Model =
     { credentials : Credentials }
@@ -86,28 +88,31 @@ view model =
                 , ("justify-content", "center")
                 , ("align-items", "center")
                 , ("flex-grow", "1") ] ]
-        [ input [ style [ ("width", "400px")
-                        , ("border-radius", "5px")
-                        , ("padding", "8px")
+        [ input [ style [ ("width", "320px")
+                        , ("background-color", "#eee")
+                        , ("color", "#333")
                         , ("margin-bottom", "16px") ]
+                , formStyle
                 , type_ "text"
                 , value model.credentials.username
                 , placeholder "Username"
                 , maxlength 100
                 , onInput ChangeUsername ] []
-        , input [ style [ ("width", "400px")
-                        , ("border-radius", "5px")
-                        , ("padding", "8px")
+        , input [ style [ ("width", "320px")
+                        , ("background-color", "#eee")
+                        , ("color", "#333")
                         , ("margin-bottom", "16px") ]
+                , formStyle
                 , type_ "password"
                 , value model.credentials.password
                 , placeholder "Password"
                 , maxlength 100
                 , onInput ChangePassword ] []
-        , button [ style [ ("width", "200px")
-                         , ("font-weight", "bold")
-                         , ("padding", "8px")
-                         , ("border-radius", "5px") ]
+        , button [ style [ ("width", "160px")
+                         , ("background-color", "#555")
+                         , ("color", "#eee")
+                         , ("font-weight", "bold") ]
+                 , formStyle
                  , onClick SubmitCredentials ]
             [ text "Login" ]
         ]

@@ -1,10 +1,19 @@
-module Menu exposing (Model, Msg, init, view, update, mountCmd)
+module Menu             exposing ( Model
+                                 , Msg
+                                 , init
+                                 , view
+                                 , update
+                                 , mountCmd
+                                 )
 
-import ServerApi exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (style, class)
-import Html.Events exposing (onClick)
+import Html             exposing (..)
+import Html.Attributes  exposing ( style, class, title )
+import Html.Events      exposing ( onClick )
+
 import Routes
+import ServerApi        exposing (..)
+import Styles           exposing (..)
+
 
 type alias Model = {}
 
@@ -36,41 +45,32 @@ update action model =
             (model, Routes.navigate Routes.NewPostPage)
 
 
------- VIEW ------
-iconStyle : Attribute msg
-iconStyle = style [
-      ("color", "#fff")
-    , ("margin-left", "24px")
-    , ("cursor", "pointer")
-    , ("box-shadow", "2px 2px 15px 1px #333")
-    , ("padding", "10px")
-    , ("border-radius", "15px")
-    , ("background", "#555")
-    ]
 
 loginOrNewPostIcon : Maybe Jwt -> Html Msg
 loginOrNewPostIcon jwt =
     case jwt of
-        Just _ -> a [ iconStyle
-                      , class "glyphicon glyphicon-pencil"
-                      , onClick GoToNewPost
-                      ] []
-        Nothing -> a [ iconStyle
-                      , class "glyphicon glyphicon-log-in"
-                      , onClick GoToLogin
-                      ] []
+        Just _ -> span [ iconStyle
+                       , class "glyphicon glyphicon-pencil"
+                       , title "New post"
+                       , onClick GoToNewPost
+                       ] []
+        Nothing -> span [ iconStyle
+                        , class "glyphicon glyphicon-log-in"
+                        , title "Login"
+                        , onClick GoToLogin
+                        ] []
 
 view : Maybe Jwt -> Html Msg
 view jwt = div [ style [ ("background-color", "#777")
-                         , ("display", "flex")
-                         , ("justify-content", "flex-end")
-                         , ("font-size", "16px")
-                         , ("margin-bottom", "-16px")
-                         , ("padding", "16px 16px 0 16px") ] ]
+                       , ("display", "flex")
+                       , ("justify-content", "flex-end")
+                       , ("margin-bottom", "-16px")
+                       , ("padding", "16px 16px 0 16px") ] ]
                  [ loginOrNewPostIcon jwt
-                 , a
+                 , span
                      [ iconStyle
                      , class "glyphicon glyphicon-home"
+                     , title "All posts"
                      , onClick GoToPosts
                      ] []
                  ]

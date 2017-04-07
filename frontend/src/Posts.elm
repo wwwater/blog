@@ -1,11 +1,21 @@
-module Posts exposing (Model, Msg, init, view, update, mountCmd)
+module Posts                exposing ( Model
+                                     , Msg
+                                     , init
+                                     , view
+                                     , update
+                                     , mountCmd )
 
-import ServerApi exposing (..)
-import Routes
-import Html exposing (..)
-import Html.Attributes exposing (class, href, style)
-import Html.Events exposing (onClick)
+import Html                 exposing (..)
+import Html.Attributes      exposing ( class
+                                     , href
+                                     , style
+                                     )
+import Html.Events          exposing ( onClick )
 import Http
+
+import ServerApi            exposing (..)
+import Routes
+import Styles               exposing (..)
 
 
 type alias Model =
@@ -51,7 +61,6 @@ update action model =
 
 
 
------- VIEW ------
 
 
 view : Model -> Html Msg
@@ -60,8 +69,7 @@ view model =
         , ("display", "flex")
         , ("justify-content", "center")
         , ("flex-grow", "1") ] ]
-        [ div [ style [ ("width", "800px")
-                      , ("margin", "0 32px") ] ]
+        [ div []
             (List.map postPanel (List.reverse model.posts))
         ]
 
@@ -73,12 +81,8 @@ postTitle maybeTitle =
 postPanel : Post -> Html Msg
 postPanel post =
     div
-        [ style [ ("cursor", "pointer")
-                , ("padding", "32px")
-                , ("margin", "32px 0")
-                , ("box-shadow", "2px 2px 15px 1px #333")
-                , ("border-radius", "2px")
-                , ("background-color", "#333") ]
+        [ style [ ("cursor", "pointer") ]
+        , postStyle
         , onClick (GoToPost (Maybe.withDefault 0 post.id))
         ]
         [ h2 [ style [ ("color", "#ddd") ] ]
