@@ -23,7 +23,7 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just (testPost str))
-                            (Just (testPost str))
+                            (testPost str)
                             Nothing)
                         ""
                     |> Query.fromHtml
@@ -33,7 +33,7 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just testPostEmpty)
-                            (Just testPostEmpty)
+                            testPostEmpty
                             Nothing)
                         ""
                     |> Query.fromHtml
@@ -44,7 +44,7 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just testPostEmpty)
-                            (Just testPostEmpty)
+                            testPostEmpty
                             Nothing)
                         ""
                     |> Query.fromHtml
@@ -55,7 +55,7 @@ all =
                     EditPost.view
                         (EditPost.Model
                             (Just (testPost "post on the server"))
-                            (Just (testPost "post on the client"))
+                            (testPost "post on the client")
                             Nothing)
                         ""
                     |> Query.fromHtml
@@ -66,7 +66,7 @@ all =
                     EditPost.view
                         (EditPost.Model
                             Nothing
-                            Nothing
+                            testPostEmpty
                             (Just "I am an error"))
                         ""
                     |> Query.fromHtml
@@ -79,11 +79,11 @@ all =
                     let (mdl, _, _) = (
                         EditPost.update
                             (EditPost.HandlePostRetrieved (Result.Err response401))
-                            (EditPost.Model Nothing Nothing Nothing))
+                            (EditPost.Model Nothing testPostEmpty Nothing))
                     in mdl
                     |> Expect.equal (EditPost.Model
                         Nothing
-                        Nothing
+                        testPostEmpty
                         (Just "You shall not pass"))
             ]
         ]

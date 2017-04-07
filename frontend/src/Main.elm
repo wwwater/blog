@@ -149,8 +149,20 @@ urlUpdate loc model =
         Just (NewPostPage as route) ->
             case model.jwt of
                 Just jwt ->
-                    { model | route = route, editPostModel = EditPost.init }
-                        ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
+                    let
+                        editPostModel = model.editPostModel
+                        mdl =
+                            if editPostModel.postOnClient.id /= Nothing
+                                -- init when model contained a post under edit
+                                -- TODO maybe fix this by separating new and edit
+                                -- components somehow
+                                then { model |
+                                    route = route,
+                                    editPostModel = EditPost.init }
+                                else { model |
+                                    route = route,
+                                    editPostModel = { editPostModel | error = Nothing } }
+                    in mdl ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
                 Nothing ->
                     model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 

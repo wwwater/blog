@@ -28,7 +28,7 @@ import Styles           exposing (..)
 
 type alias Model =
     { postOnServer : Maybe Post
-    , postOnClient : Maybe Post
+    , postOnClient : Post
     , error : Maybe String
     }
 
@@ -42,13 +42,13 @@ type Msg
 
 
 emptyPost : Post
-emptyPost = { id = Nothing, title = Just "", content = Just "" }
+emptyPost = { id = Nothing, title = Nothing, content = Nothing }
 
 init : Model
 init =
     Model
         Nothing
-        (Just emptyPost)
+        emptyPost
         Nothing
 
 
@@ -62,13 +62,17 @@ mountCmd id =
 
 requiredPostSaving : Model -> Bool
 requiredPostSaving model =
-    case model.postOnClient of
-        Just post ->
-            case model.postOnServer of
-                Just postOnServer -> post /= postOnServer
-                Nothing -> post /= emptyPost
-        Nothing -> False
+    case model.postOnServer of
+        Just postOnServer -> model.postOnClient /= postOnServer
+        Nothing -> model.postOnClient /= emptyPost
 
+requiredPostOnClientRewriting : Model -> Post -> Bool
+requiredPostOnClientRewriting model newPost =
+    case model.postOnServer of
+        -- if this post was already loaded once, do not update
+        -- postOnClient with the post from server
+        Just postOnServer -> postOnServer.id /= newPost.id
+        Nothing -> True
 
 update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
 update action model =
@@ -76,43 +80,36 @@ update action model =
         HandlePostRetrieved res ->
             case res of
                 Result.Ok post ->
-                    let _ = Debug.log "Received updated post" post.id in
-                    onlyUpdateModel { model |
-                          postOnServer = Just post
-                        , postOnClient = Just post
-                        , error = Nothing }
+                    let _ = Debug.log "Received updated post with id" post.id in
+                    if requiredPostOnClientRewriting model post
+                        then onlyUpdateModel { model |
+                              postOnServer = Just post
+                            , postOnClient = post
+                            , error = Nothing }
+                        else onlyUpdateModel { model |
+                              postOnServer = Just post
+                            , error = Nothing }
 
-                Result.Err err -> handleServerErrorForPost
-                    { model | postOnServer = Nothing , postOnClient = Nothing }
-                    err
+                Result.Err err -> handleServerErrorForPost model err
 
         ChangePostTitleOnClient newTitle ->
-            case model.postOnClient of
-                Just justPost ->
-                    onlyUpdateModel { model | postOnClient = Just { justPost | title = Just newTitle } }
-                Nothing -> onlyUpdateModel model
+            let post = model.postOnClient in
+            onlyUpdateModel { model | postOnClient = { post | title = Just newTitle } }
 
         ChangePostContentOnClient newContent ->
-            case model.postOnClient of
-                Just justPost ->
-                    onlyUpdateModel { model | postOnClient = Just { justPost | content = Just newContent } }
-                Nothing -> onlyUpdateModel model
+            let post = model.postOnClient in
+            onlyUpdateModel { model | postOnClient = { post | content = Just newContent } }
 
         UpdatePostOnServer jwt ->
-            case model.postOnClient of
-                Just post ->
-                    let _ = Debug.log "Updating post on server" post.id
-                    in (model, ServerApi.updatePost post jwt HandlePostRetrieved, Global.None)
-                Nothing -> onlyUpdateModel model
+            let _ = Debug.log "Updating post on server with id" model.postOnClient.id
+            in (model, ServerApi.updatePost model.postOnClient jwt HandlePostRetrieved, Global.None)
 
         Tick jwt _ ->
-            case model.postOnClient of
-                Just post ->
-                    if requiredPostSaving model
-                        then let _ = Debug.log "Updating post on server by timer" post.id
-                            in (model, ServerApi.updatePost post jwt HandlePostRetrieved, Global.None)
-                        else onlyUpdateModel model
-                Nothing -> onlyUpdateModel model
+            if requiredPostSaving model
+                then
+                    let _ = Debug.log "Updating post on server by timer with id" model.postOnClient.id
+                    in (model, ServerApi.updatePost model.postOnClient jwt HandlePostRetrieved, Global.None)
+                else onlyUpdateModel model
 
 
 
@@ -128,7 +125,7 @@ subscriptions model jwt =
 
 renderUpdateButton : Model -> Jwt -> Html Msg
 renderUpdateButton model jwt =
-    if model.postOnClient /= model.postOnServer
+    if (Just model.postOnClient) /= model.postOnServer
     then span [ iconStyle
               , class "glyphicon glyphicon-floppy-disk"
               , title "Save changes"
@@ -143,8 +140,15 @@ view model jwt =
                 , ("justify-content", "center")
                 , ("flex-grow", "1")
                 ] ]
-        [ case model.postOnClient of
-            Just post ->
+        [ case model.error of
+            Just error ->
+                h2 [ style [ ("color", "#fff")
+                           , ("padding", "32px")
+                           , ("width", "100vw")
+                           , ("text-align", "center")
+                           ] ]
+                    [ text error ]
+            Nothing ->
                 div [ postStyle ]
                     [ textarea [ style [ ("color", "#ddd")
                                        , ("width", "100%")
@@ -156,7 +160,7 @@ view model jwt =
                                        , ("margin", "16px 0") ]
                                , class "test-edit-post-title"
                                , maxlength 200
-                               , value (Maybe.withDefault "" post.title)
+                               , value (Maybe.withDefault "" model.postOnClient.title)
                                , placeholder "..type here the title of the post"
                                , onInput ChangePostTitleOnClient ] []
                     , textarea [ style [ ("color", "#fff")
@@ -167,18 +171,11 @@ view model jwt =
                                        , ("resize", "none")
                                        , ("border", "none") ]
                                , class "test-edit-post-content"
-                               , value (Maybe.withDefault "" post.content)
+                               , value (Maybe.withDefault "" model.postOnClient.content)
                                , maxlength 10000
                                , placeholder "..type here the content of the post"
                                , onInput ChangePostContentOnClient ] []
                     , div [ style [ ("align-self", "flex-end") ] ]
                         [ renderUpdateButton model jwt ]
                     ]
-            Nothing ->
-                h2 [ style [ ("color", "#fff")
-                            , ("padding", "32px")
-                            , ("width", "100vw")
-                            , ("text-align", "center")
-                            ] ]
-                    [ text (Maybe.withDefault "An unexpected error occured." model.error) ]
         ]
