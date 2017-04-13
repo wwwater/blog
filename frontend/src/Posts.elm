@@ -67,11 +67,11 @@ view : Model -> Html Msg
 view model =
     div [ style [ ("background-color", "#777")
         , ("display", "flex")
-        , ("justify-content", "center")
+        , ("flex-direction", "column")
+        , ("align-items", "center")
         , ("flex-grow", "1") ] ]
-        [ div []
-            (List.map postPanel (List.reverse model.posts))
-        ]
+        (List.map postPanel (List.reverse model.posts))
+
 
 postTitle : Maybe String -> String
 postTitle maybeTitle =

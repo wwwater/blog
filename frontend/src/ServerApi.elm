@@ -20,7 +20,7 @@ type alias Jwt = String
 
 baseUrl : String
 baseUrl =
-    "http://localhost:8081"
+    "http://46.101.142.224:8081"
 
 
 getPosts : (Result Http.Error (List Post) -> msg) -> Cmd msg
