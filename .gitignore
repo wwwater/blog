@@ -8,3 +8,4 @@ backend/dist
 *.swp
 *.log
 *.db
+*.gz

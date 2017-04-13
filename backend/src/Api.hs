@@ -21,11 +21,16 @@ import Database.SQLite.Simple as Sql
 import Crypto.PasswordStore                 (verifyPassword)
 import Data.ByteString.Char8                (pack)
 import Data.Text                            (unpack)
+import System.Environment                   (lookupEnv)
+import Data.Maybe                           (fromMaybe)
 
 import Jwt                                  (createJwt, verifyJwt)
 import qualified Model as M
 import qualified Storage as S
 
+
+defaultJwtSecret :: String
+defaultJwtSecret = "jwt-secret"
 
 
 type JwtAPI =
@@ -47,7 +52,10 @@ issueJwt password passwordHashIO = do
   case maybePasswordHash of
     Just passwordHash ->
       if verifyPassword (pack password) (pack passwordHash)
-        then fmap (Just . M.Jwt . unpack) $ createJwt "meow"
+        then do
+          jwtSecret <- lookupEnv "JWT_SECRET"
+          let secret = fromMaybe defaultJwtSecret jwtSecret in
+            fmap (Just . M.Jwt . unpack) $ createJwt secret
         else return Nothing
     Nothing -> return Nothing
 
@@ -76,10 +84,12 @@ wrapInJwtCheck :: Maybe String -> Handler a -> Handler a
 wrapInJwtCheck jwt callback =
   case jwt of
     Just jwtToken -> do
-      valid <- liftIO $ verifyJwt "meow" jwtToken
-      if valid
-        then callback
-        else throwError err401 { errBody = "JWT token has expired or not valid." }
+      jwtSecret <- liftIO $ lookupEnv "JWT_SECRET"
+      let secret = fromMaybe defaultJwtSecret jwtSecret in do
+        valid <- liftIO $ verifyJwt secret jwtToken
+        if valid
+          then callback
+          else throwError err401 { errBody = "JWT token has expired or not valid." }
     Nothing -> throwError err401 { errBody = "Please provide JWT token in header." }
 
 

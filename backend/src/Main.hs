@@ -16,7 +16,7 @@ import qualified Storage
 
 testConnect :: IO Sql.Connection
 -- testConnect = Sql.open ":memory:"
-testConnect = Sql.open "blog.db"
+testConnect = Sql.open "db/blog.db"
 
 
 withTestConnection :: (Sql.Connection -> IO a) -> IO a
