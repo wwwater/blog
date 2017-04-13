@@ -5,6 +5,7 @@ backend/.stack-work
 backend/.cabal-sandbox
 backend/cabal.sandbox.config
 backend/dist
+backend/*.tix
 *.swp
 *.log
 *.db
