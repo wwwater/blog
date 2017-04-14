@@ -64,7 +64,6 @@ view : Maybe Jwt -> Html Msg
 view jwt = div [ style [ ("background-color", "#777")
                        , ("display", "flex")
                        , ("justify-content", "flex-end")
-                       , ("margin-bottom", "-16px")
                        , ("padding", "16px 16px 0 16px") ] ]
                  [ loginOrNewPostIcon jwt
                  , span

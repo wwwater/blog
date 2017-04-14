@@ -150,8 +150,7 @@ view model jwt =
                     [ text error ]
             Nothing ->
                 div [ postStyle ]
-                    [ textarea [ style [ ("color", "#ddd")
-                                       , ("width", "100%")
+                    [ textarea [ style [ ("width", "100%")
                                        , ("background-color", "inherit")
                                        , ("border", "none")
                                        , ("font-size", "30px")
@@ -163,10 +162,9 @@ view model jwt =
                                , value (Maybe.withDefault "" model.postOnClient.title)
                                , placeholder "..type here the title of the post"
                                , onInput ChangePostTitleOnClient ] []
-                    , textarea [ style [ ("color", "#fff")
-                                       , ("background-color", "inherit")
+                    , textarea [ style [ ("background-color", "inherit")
                                        , ("flex-grow", "1")
-                                       , ("margin-bottom", "32px")
+                                       , ("margin-bottom", "16px")
                                        , ("padding", "8px")
                                        , ("resize", "none")
                                        , ("border", "none") ]
@@ -175,7 +173,9 @@ view model jwt =
                                , maxlength 10000
                                , placeholder "..type here the content of the post"
                                , onInput ChangePostContentOnClient ] []
-                    , div [ style [ ("align-self", "flex-end") ] ]
+                    , div [ style [ ("align-self", "flex-end")
+                                  , ("margin-bottom", "-16px")
+                                  , ("height", "34px") ] ]
                         [ renderUpdateButton model jwt ]
                     ]
         ]

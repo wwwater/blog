@@ -135,7 +135,7 @@ urlUpdate loc model =
                 ! [ Cmd.map PostsMsg Posts.mountCmd ]
 
         Just ((PostPage postId) as route) ->
-            { model | route = route }
+            { model | route = route, postModel = Post.init }
                 ! [ Cmd.map PostMsg <| Post.mountCmd postId ]
 
         Just ((EditPostPage postId) as route) ->

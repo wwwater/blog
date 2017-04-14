@@ -20,13 +20,15 @@ postStyle : Attribute msg
 postStyle = style [
       ("display", "flex")
     , ("flex-direction", "column")
-    , ("margin", "32px")
+    , ("margin", "16px")
     , ("padding", "32px")
     , ("width", "800px")
-    , ("max-width", "calc(100vw - 64px)")
+    , ("max-width", "calc(100vw - 32px)")
     , ("box-shadow", "2px 2px 15px 1px #333")
     , ("border-radius", "2px")
     , ("background-color", "#333")
+    , ("line-height", "1.6")
+    , ("color", "#ddd")
     ]
 
 formStyle : Attribute msg

@@ -9,6 +9,7 @@ function deploy_frontend() {
     if [[ $test_passed == "1" ]]
     then
         npm run build
+        sed -i s'|http://localhost:8081|https://cyclinginthewind.com:8083|' dist/index.js
         scp -r dist 46.101.142.224:~/cyclinginthewind/frontend/
     else
         echo "Tests failed. Not deploying anything! :)"
@@ -39,9 +40,14 @@ function deploy_backend() {
     cd ..
 }
 
+function backup_database() {
+    echo -e "Backup database from server on dropbox\n"
+    scp 46.101.142.224:~/cyclinginthewind/db/blog.db ~/Dropbox/backup/
+}
+
 if [[ $# -eq 0 ]] 
 then
-    echo "An argument --frontend or --backend is needed."
+    echo "An argument --frontend or --backend or --backup-db is needed."
     exit
 fi
 
@@ -56,8 +62,13 @@ do
       deploy_backend
       shift
       ;;
+      -DB|--backup-db)
+      backup_database
+      shift
+      ;;
       *)
-      echo "${1} is not a valid flag. Only --frontend or --backend are acceptable."
+      echo "${1} is not a valid flag. Only --frontend or --backend or
+        --backup-db are acceptable."
       shift
       ;;
     esac

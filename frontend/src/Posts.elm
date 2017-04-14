@@ -85,13 +85,9 @@ postPanel post =
         , postStyle
         , onClick (GoToPost (Maybe.withDefault 0 post.id))
         ]
-        [ h2 [ style [ ("color", "#ddd") ] ]
+        [ h2 [ style [ ("margin-bottom", "32px") ] ]
             [ text (postTitle post.title) ]
-        , div [ style [ ("color", "#fff")
-                      , ("white-space", "pre-wrap")
+        , div [ style [ ("white-space", "pre-wrap")
                       , ("text-align", "justify") ] ]
-            [ let content = Maybe.withDefault "" post.content in
-                if (String.length content > 1000)
-                    then text (String.left 1000 content ++ "...")
-                    else text content ]
+            [ text (Maybe.withDefault "" post.content) ]
         ]

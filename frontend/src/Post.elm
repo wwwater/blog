@@ -97,44 +97,46 @@ view model jwt =
                 , ("justify-content", "center")
                 , ("flex-grow", "1")
                 ] ]
-        [ case model.post of
-            Just post ->
-                div [ postStyle ]
-                    [ h2 [ style [ ("color", "#ddd") ] ]
-                        [ text (Maybe.withDefault "" post.title) ]
-                    , div [ style [ ("color", "#fff")
-                                  , ("flex-grow", "1")
-                                  , ("text-align", "justify")
-                                  , ("white-space", "pre-wrap")
-                                  ] ]
-                        [ text (Maybe.withDefault "" post.content) ]
-                    , div [ style [ ("font-size", "18px")
-                                  , ("align-self", "flex-end")
-                                  , ("margin-top", "16px")
-                                  ] ]
-                        [ case jwt of
-                            Just jwt -> div []
-                                [ span
-                                    [ iconStyle
-                                    , class "glyphicon glyphicon-pencil"
-                                    , title "Edit Post"
-                                    , onClick (GoToEditPost (Maybe.withDefault 0 post.id))
-                                    ] []
-                                , span
-                                    [ iconStyle
-                                    , class "glyphicon glyphicon-trash"
-                                    , title "Delete post"
-                                    , onClick (DeletePostOnServer jwt)
-                                    ] []
-                                ]
-                            Nothing -> div [] []
-                        ]
-                    ]
-            Nothing ->
+        [ case model.error of
+            Just error ->
                 h2 [ style [ ("color", "#fff")
                             , ("padding", "32px")
                             , ("width", "100vw")
                             , ("text-align", "center")
                             ] ]
-                    [ text (Maybe.withDefault "An unexpected error occured." model.error) ]
+                    [ text error ]
+            Nothing ->
+                case model.post of
+                    Just post ->
+                        div [ postStyle ]
+                            [ h2 [ style [ ("margin-bottom", "32px") ] ]
+                                [ text (Maybe.withDefault "" post.title) ]
+                            , div [ style [ ("flex-grow", "1")
+                                          , ("text-align", "justify")
+                                          , ("white-space", "pre-wrap")
+                                          ] ]
+                                [ text (Maybe.withDefault "" post.content) ]
+                            , div [ style [ ("font-size", "18px")
+                                          , ("align-self", "flex-end")
+                                          , ("margin-top", "16px")
+                                          ] ]
+                                [ case jwt of
+                                    Just jwt -> div []
+                                        [ span
+                                            [ iconStyle
+                                            , class "glyphicon glyphicon-pencil"
+                                            , title "Edit Post"
+                                            , onClick (GoToEditPost (Maybe.withDefault 0 post.id))
+                                            ] []
+                                        , span
+                                            [ iconStyle
+                                            , class "glyphicon glyphicon-trash"
+                                            , title "Delete post"
+                                            , onClick (DeletePostOnServer jwt)
+                                            ] []
+                                        ]
+                                    Nothing -> div [] []
+                                ]
+                            ]
+                    Nothing -> div [] []
         ]
