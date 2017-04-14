@@ -28,6 +28,11 @@ all =
                     Posts.view (Posts.Model [testPost "sun and wind"] [])
                     |> Query.fromHtml
                     |> Query.has [ text "sun" ]
+            , test "a post displays creating time" <|
+                \() ->
+                    Posts.view (Posts.Model [testPost ""] [])
+                    |> Query.fromHtml
+                    |> Query.has [ text "14 Apr 2017" ]
             ]
         ]
 

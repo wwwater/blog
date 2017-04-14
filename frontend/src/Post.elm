@@ -13,6 +13,7 @@ import Http
 import Global           exposing ( Msg (..)
                                  , handleServerErrorForPost
                                  , onlyUpdateModel
+                                 , formatCreationDate
                                  )
 import ServerApi        exposing (..)
 import Routes
@@ -109,7 +110,9 @@ view model jwt =
                 case model.post of
                     Just post ->
                         div [ postStyle ]
-                            [ h2 [ style [ ("margin-bottom", "32px") ] ]
+                            [ div [ style [ ("align-self", "flex-end") ] ]
+                                [ text <| formatCreationDate post.createdAt ]
+                            , h2 [ style [ ("margin-bottom", "32px") ] ]
                                 [ text (Maybe.withDefault "" post.title) ]
                             , div [ style [ ("flex-grow", "1")
                                           , ("text-align", "justify")

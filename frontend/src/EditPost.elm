@@ -42,7 +42,11 @@ type Msg
 
 
 emptyPost : Post
-emptyPost = { id = Nothing, title = Nothing, content = Nothing }
+emptyPost = { id = Nothing
+            , title = Nothing
+            , content = Nothing
+            , createdAt = Nothing
+            }
 
 init : Model
 init =

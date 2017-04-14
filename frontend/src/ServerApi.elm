@@ -8,6 +8,7 @@ type alias Post =
     { id : Maybe Int
     , title : Maybe String
     , content : Maybe String
+    , createdAt : Maybe Int
     }
 
 type alias Credentials =
@@ -72,10 +73,11 @@ postsDecoder =
 
 postDecoder : JsonD.Decoder Post
 postDecoder =
-    JsonD.map3 Post
+    JsonD.map4 Post
         (JsonD.field "postId" (JsonD.maybe JsonD.int))
         (JsonD.field "postTitle" (JsonD.maybe JsonD.string))
         (JsonD.field "postContent" (JsonD.maybe JsonD.string))
+        (JsonD.field "createdAt" (JsonD.maybe JsonD.int))
 
 encodePost : Post -> String
 encodePost post =

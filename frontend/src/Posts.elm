@@ -16,6 +16,7 @@ import Http
 import ServerApi            exposing (..)
 import Routes
 import Styles               exposing (..)
+import Global               exposing ( formatCreationDate )
 
 
 type alias Model =
@@ -61,8 +62,6 @@ update action model =
 
 
 
-
-
 view : Model -> Html Msg
 view model =
     div [ style [ ("background-color", "#777")
@@ -70,7 +69,7 @@ view model =
         , ("flex-direction", "column")
         , ("align-items", "center")
         , ("flex-grow", "1") ] ]
-        (List.map postPanel (List.reverse model.posts))
+        (List.map postPanel model.posts)
 
 
 postTitle : Maybe String -> String
@@ -85,7 +84,10 @@ postPanel post =
         , postStyle
         , onClick (GoToPost (Maybe.withDefault 0 post.id))
         ]
-        [ h2 [ style [ ("margin-bottom", "32px") ] ]
+        [ div [ style [ ("align-self", "flex-end") ] ]
+            [ text <| formatCreationDate post.createdAt ]
+        , h2 [ style [ ("margin-top", "8px")
+                     , ("margin-bottom", "32px") ] ]
             [ text (postTitle post.title) ]
         , div [ style [ ("white-space", "pre-wrap")
                       , ("text-align", "justify") ] ]

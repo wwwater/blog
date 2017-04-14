@@ -30,6 +30,11 @@ all =
                     |> Query.fromHtml
                     |> Query.find [ class "glyphicon-trash" ]
                     |> Query.has [ tag "span" ]
+            , test "a post displays creation date" <|
+                \() ->
+                    Post.view (testModel "") (Just "")
+                    |> Query.fromHtml
+                    |> Query.has [ text "14 Apr 2017" ]
             ]
         ]
 

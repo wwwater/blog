@@ -47,16 +47,16 @@ spec = beforeAll testConnect $
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith`
-          "[{\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
+          "[{\"createdAt\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
           {matchStatus = 200}
 
     it "retrieves a post by id" $ \connection -> do
       Storage.createSchema connection
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
-      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (5, 'Title', 'Content')"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, created) VALUES (5, 'Title', 'Content',123)"
       withApplication (App.app connection) $ do
         get "/post/5" `shouldRespondWith`
-          "{\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
+          "{\"createdAt\":123,\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
           {matchStatus = 200}
 
     it "returns 404 if post id does not exist" $ \connection -> do
@@ -116,7 +116,7 @@ spec = beforeAll testConnect $
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
                 (createPostJson Nothing "New post" "Content")
-          `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"New post\"}"
+          `shouldRespondWith` 200
 
     it "can update a post using JWT" $ \connection -> do
       addTestUserToDB connection
@@ -127,7 +127,7 @@ spec = beforeAll testConnect $
                 "/post"
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
                 (createPostJson (Just 3) "Updated post" "Content")
-          `shouldRespondWith` "{\"postContent\":\"Content\",\"postId\":3,\"postTitle\":\"Updated post\"}"
+          `shouldRespondWith` 200
 
     it "can delete a post using JWT" $ \connection -> do
       addTestUserToDB connection
@@ -163,7 +163,8 @@ createPostJson id title content =
     encode (Model.Post {
         Model.postId = id
       , Model.postTitle = Just title
-      , Model.postContent = Just content})
+      , Model.postContent = Just content
+      , Model.createdAt = Nothing })
 
 createCredentialsJson :: String -> String -> BL.ByteString
 createCredentialsJson user password =

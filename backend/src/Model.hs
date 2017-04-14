@@ -11,6 +11,7 @@ data Post = Post
   { postId :: Maybe Int
   , postTitle :: Maybe String
   , postContent :: Maybe String
+  , createdAt :: Maybe Int
   } deriving (Generic)
 
 data Credentials = Credentials
@@ -24,7 +25,7 @@ data Jwt = Jwt
 
 
 instance Sql.FromRow Post where
-  fromRow = Post <$> Sql.field <*> Sql.field <*> Sql.field
+  fromRow = Post <$> Sql.field <*> Sql.field <*> Sql.field <*> Sql.field
 
 instance Sql.FromRow Credentials where
   fromRow = Credentials <$> Sql.field <*> Sql.field
