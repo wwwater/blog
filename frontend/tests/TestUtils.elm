@@ -1,4 +1,4 @@
-module Util exposing (..)
+module TestUtils exposing (..)
 
 import ServerApi
 

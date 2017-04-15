@@ -10,7 +10,7 @@ import Http                 exposing (Error(..), Response)
 import Dict                 exposing (empty)
 
 import EditPost
-import Util                 exposing (testPost, testPostEmpty)
+import TestUtils            exposing (testPost, testPostEmpty)
 
 
 

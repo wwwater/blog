@@ -7,13 +7,16 @@ module Post             exposing ( Model
                                  )
 
 import Html             exposing (..)
-import Html.Attributes  exposing (class, href, style, title)
-import Html.Events      exposing (onClick)
+import Html.Attributes  exposing ( class, href, style, title )
+import Html.Events      exposing ( onClick )
 import Http
+
 import Global           exposing ( Msg (..)
                                  , handleServerErrorForPost
                                  , onlyUpdateModel
-                                 , formatCreationDate
+                                 )
+import Util             exposing ( formatCreationDate
+                                 , renderPostContent
                                  )
 import ServerApi        exposing (..)
 import Routes
@@ -86,11 +89,6 @@ update action model =
 
 
 
-
-
-
-
-
 view : Model -> Maybe Jwt -> Html Msg
 view model jwt =
     div [ style [ ("background-color", "#777")
@@ -118,7 +116,7 @@ view model jwt =
                                           , ("text-align", "justify")
                                           , ("white-space", "pre-wrap")
                                           ] ]
-                                [ text (Maybe.withDefault "" post.content) ]
+                                (renderPostContent (Maybe.withDefault "" post.content))
                             , div [ style [ ("font-size", "18px")
                                           , ("align-self", "flex-end")
                                           , ("margin-top", "16px")

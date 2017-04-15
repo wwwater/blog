@@ -6,7 +6,7 @@ import Test.Html.Query      as Query
 import Test.Html.Selector   exposing (text, tag, class)
 
 import Post
-import Util                 exposing (testPost)
+import TestUtils            exposing (testPost)
 
 
 all : Test
@@ -35,6 +35,13 @@ all =
                     Post.view (testModel "") (Just "")
                     |> Query.fromHtml
                     |> Query.has [ text "14 Apr 2017" ]
+            , test "a post displays http link as a link" <|
+                \() ->
+                    Post.view
+                        (testModel "text https://test.com more text")
+                        Nothing
+                    |> Query.fromHtml
+                    |> Query.has [ tag "a" ]
             ]
         ]
 

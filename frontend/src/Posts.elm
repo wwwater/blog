@@ -16,7 +16,9 @@ import Http
 import ServerApi            exposing (..)
 import Routes
 import Styles               exposing (..)
-import Global               exposing ( formatCreationDate )
+import Util                 exposing ( formatCreationDate
+                                     , renderPostContent
+                                     )
 
 
 type alias Model =
@@ -91,5 +93,5 @@ postPanel post =
             [ text (postTitle post.title) ]
         , div [ style [ ("white-space", "pre-wrap")
                       , ("text-align", "justify") ] ]
-            [ text (Maybe.withDefault "" post.content) ]
+            (renderPostContent (Maybe.withDefault "" post.content))
         ]
