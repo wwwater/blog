@@ -8,7 +8,7 @@ Currently hosted on https://cyclinginthewind.com/
 ---
 
 ### To run locally:
-####Backend
+#### Backend
 
 `stack clean; stack build; stack exec cyclinginthewind`
 `stack test --coverage --ghc-options "-fforce-recomp"`
