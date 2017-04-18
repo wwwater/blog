@@ -1,23 +1,20 @@
 # Haskell/Elm Blog App 
 ### A web application for a personal blog
-Initially based on https://github.com/rundis/albums
+Initially inspired by https://github.com/rundis/albums
+
+Currently hosted on https://cyclinginthewind.com/
 
 
 ---
 
-### Backend
+### To run locally:
+####Backend
 
-`stack clean`
-
-`stack build`
-
-`stack exec cyclinginthewind`
-
+`stack clean; stack build; stack exec cyclinginthewind`
 `stack test --coverage --ghc-options "-fforce-recomp"`
 
 
-### Frontend
+#### Frontend
 
 `npm run dev`
-
 `elm test`

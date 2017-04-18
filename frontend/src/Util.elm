@@ -24,8 +24,7 @@ formatCreationDate createdAt =
 
 
 urlRegex : Regex
-urlRegex = regex
-    "https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[-a-zA-Z0-9@:%_\\+.~#?&//=]{2,}"
+urlRegex = regex "https?:\\/\\/[-a-zA-Z0-9@:%_\\+.~#?&\\/=]+"
 
 mixLists : List a -> List a -> List a -> List a
 mixLists a b result =
