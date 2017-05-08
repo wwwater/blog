@@ -66,17 +66,19 @@ type PostAPI =
        Get '[JSON] [M.Post]
   :<|> Capture "postId" Int :> Get '[JSON] M.Post
   :<|> Header "jwt" String :> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
+  :<|> Header "jwt" String :> Capture "postId" Int :> "publish" :> Post '[JSON] M.Post
   :<|> Header "jwt" String :> Capture "postId" Int :> DeleteNoContent '[JSON] ()
 
 
 postServer :: Sql.Connection -> Server PostAPI
 postServer conn =
-  getAllPosts :<|> getPost :<|> updatePost :<|> deletePost
+  getAllPosts :<|> getPost :<|> updatePost :<|> publishPost :<|> deletePost
 
   where
     getAllPosts = liftIO $ S.selectAllPosts conn
     getPost postId = liftIOMaybeToHandler err404 $ S.selectPost conn postId
     updatePost jwt post = wrapInJwtCheck jwt $ updateAuthorizedPost conn post
+    publishPost jwt postId = wrapInJwtCheck jwt $ liftIOMaybeToHandler err404 $ S.publishPost conn postId
     deletePost jwt postId = wrapInJwtCheck jwt $ liftIO $ S.deletePost conn postId
 
 

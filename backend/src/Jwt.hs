@@ -19,7 +19,7 @@ import Data.Text                (pack)
 createJwt :: String -> IO JSON
 createJwt key = do
   now <- getPOSIXTime
-  let expire = now + 60 * 60
+  let expire = now + 60 * 60 * 24 -- 24 hours
       claimsSet = def { iat = numericDate now, Web.JWT.exp = numericDate expire }
    in return $ encodeSigned HS256 (secret (pack key)) claimsSet
 

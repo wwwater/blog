@@ -47,7 +47,7 @@ spec = beforeAll testConnect $
       Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith`
-          "[{\"createdAt\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
+          "[{\"createdAt\":null,\"published\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
           {matchStatus = 200}
 
     it "retrieves a post by id" $ \connection -> do
@@ -56,7 +56,7 @@ spec = beforeAll testConnect $
       Sql.execute_ connection "INSERT INTO post (id, title, content, created) VALUES (5, 'Title', 'Content',123)"
       withApplication (App.app connection) $ do
         get "/post/5" `shouldRespondWith`
-          "{\"createdAt\":123,\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
+          "{\"createdAt\":123,\"published\":null,\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
           {matchStatus = 200}
 
     it "returns 404 if post id does not exist" $ \connection -> do
@@ -141,6 +141,29 @@ spec = beforeAll testConnect $
           ""
         get "/post/3" `shouldRespondWith` 404
 
+    it "can publish a post using JWT" $ \connection -> do
+      addTestUserToDB connection
+      Sql.execute_ connection "INSERT OR IGNORE INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
+      withApplication (App.app connection) $ do
+        jwtResponse <- makeJwtRequest
+        request
+          "POST"
+          "/post/3/publish"
+          [("Content-Type", "application/json"), ("jwt", getJwtFromResponse jwtResponse)]
+          ""
+        `shouldRespondWith` 200
+
+    it "publishing a post with wrong id returns 404" $ \connection -> do
+      addTestUserToDB connection
+      withApplication (App.app connection) $ do
+        jwtResponse <- makeJwtRequest
+        request
+          "POST"
+          "/post/33/publish"
+          [("Content-Type", "application/json"), ("jwt", getJwtFromResponse jwtResponse)]
+          ""
+        `shouldRespondWith` 404
+
     it "cannot create a new post using wrong JWT" $ \connection -> do
       Storage.createSchema connection
       withApplication (App.app connection) $ do
@@ -164,7 +187,9 @@ createPostJson id title content =
         Model.postId = id
       , Model.postTitle = Just title
       , Model.postContent = Just content
-      , Model.createdAt = Nothing })
+      , Model.createdAt = Nothing
+      , Model.published = Just False
+      })
 
 createCredentialsJson :: String -> String -> BL.ByteString
 createCredentialsJson user password =
