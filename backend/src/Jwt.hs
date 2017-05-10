@@ -16,14 +16,18 @@ import Web.JWT                  (iat,
 import Data.Time.Clock.POSIX    (getPOSIXTime)
 import Data.Text                (pack)
 
-createJwt :: String -> IO JSON
+import Model                    as M
+
+
+
+createJwt :: M.JwtSecret -> IO JSON
 createJwt key = do
   now <- getPOSIXTime
   let expire = now + 60 * 60 * 24 -- 24 hours
       claimsSet = def { iat = numericDate now, Web.JWT.exp = numericDate expire }
    in return $ encodeSigned HS256 (secret (pack key)) claimsSet
 
-verifyJwt :: String -> String -> IO Bool
+verifyJwt :: M.JwtSecret -> M.JwtToken -> IO Bool
 verifyJwt key jwt =
   case decodeAndVerifySignature (secret (pack key)) (pack jwt) of
     Just verifiedJwt ->

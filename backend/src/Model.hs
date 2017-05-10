@@ -7,8 +7,11 @@ import GHC.Generics
 import Database.SQLite.Simple     as Sql
 import Data.Aeson                 (FromJSON, ToJSON)
 
+
+type PostId = Int
+
 data Post = Post
-  { postId :: Maybe Int
+  { postId :: Maybe PostId
   , postTitle :: Maybe String
   , postContent :: Maybe String
   , createdAt :: Maybe Int
@@ -20,8 +23,11 @@ data Credentials = Credentials
   , password :: String
   } deriving (Generic)
 
+type JwtSecret = String
+type JwtToken = String
+
 data Jwt = Jwt
-  { token :: String
+  { token :: JwtToken
   } deriving (Generic)
 
 

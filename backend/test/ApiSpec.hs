@@ -42,22 +42,29 @@ spec = beforeAll testConnect $
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith` "[]" {matchStatus = 200}
 
-    it "retrieves one post" $ \connection -> do
+    it "retrieves only published posts" $ \connection -> do
       Storage.createSchema connection
-      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (1, 'Title', 'Content', 1)"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (2, 'Title', 'Content', 0)"
       withApplication (App.app connection) $ do
         get "/post" `shouldRespondWith`
-          "[{\"createdAt\":null,\"published\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
+          "[{\"createdAt\":null,\"published\":true,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
           {matchStatus = 200}
 
     it "retrieves a post by id" $ \connection -> do
       Storage.createSchema connection
-      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
-      Sql.execute_ connection "INSERT INTO post (id, title, content, created) VALUES (5, 'Title', 'Content',123)"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (3, 'Title', 'Content', 1)"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, created, published) VALUES (5, 'Title', 'Content',123, 1)"
       withApplication (App.app connection) $ do
         get "/post/5" `shouldRespondWith`
-          "{\"createdAt\":123,\"published\":null,\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
+          "{\"createdAt\":123,\"published\":true,\"postContent\":\"Content\",\"postId\":5,\"postTitle\":\"Title\"}"
           {matchStatus = 200}
+
+    it "returns 404 if post is not published" $ \connection -> do
+      Storage.createSchema connection
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (4, 'Title', 'Content', 0)"
+      withApplication (App.app connection) $ do
+        get "/post/4" `shouldRespondWith` 404
 
     it "returns 404 if post id does not exist" $ \connection -> do
       Storage.createSchema connection
@@ -108,6 +115,32 @@ spec = beforeAll testConnect $
   describe "test /post endpoints that require JWT" $
     after (\connection -> Sql.execute_ connection "DROP TABLE user") $ do
 
+    it "can retrieve unpublished posts using JWT" $ \connection -> do
+      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
+      addTestUserToDB connection
+      withApplication (App.app connection) $ do
+        response <- makeJwtRequest
+        request "GET"
+                "/post"
+                [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
+                ""
+          `shouldRespondWith`
+          "[{\"createdAt\":null,\"published\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
+          {matchStatus = 200}
+
+    it "can retrieve unpublished post using JWT" $ \connection -> do
+      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (2, 'Title', 'Content')"
+      addTestUserToDB connection
+      withApplication (App.app connection) $ do
+        response <- makeJwtRequest
+        request "GET"
+                "/post/2"
+                [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
+                ""
+          `shouldRespondWith`
+          "{\"createdAt\":null,\"published\":null,\"postContent\":\"Content\",\"postId\":2,\"postTitle\":\"Title\"}"
+          {matchStatus = 200}
+
     it "can create a new post using JWT" $ \connection -> do
       addTestUserToDB connection
       withApplication (App.app connection) $ do
@@ -120,7 +153,7 @@ spec = beforeAll testConnect $
 
     it "can update a post using JWT" $ \connection -> do
       addTestUserToDB connection
-      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
+      Sql.execute_ connection "INSERT OR IGNORE INTO post (id, title, content) VALUES (3, 'Title', 'Content')"
       withApplication (App.app connection) $ do
         response <- makeJwtRequest
         request "POST"

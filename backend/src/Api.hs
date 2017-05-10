@@ -23,6 +23,7 @@ import Data.ByteString.Char8                (pack)
 import Data.Text                            (unpack)
 import System.Environment                   (lookupEnv)
 import Data.Maybe                           (fromMaybe)
+import Data.List                            (filter)
 
 import Jwt                                  (createJwt, verifyJwt)
 import qualified Model as M
@@ -65,35 +66,66 @@ issueJwt password passwordHashIO = do
 type PostAPI =
        Get '[JSON] [M.Post]
   :<|> Capture "postId" Int :> Get '[JSON] M.Post
-  :<|> Header "jwt" String :> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
-  :<|> Header "jwt" String :> Capture "postId" Int :> "publish" :> Post '[JSON] M.Post
-  :<|> Header "jwt" String :> Capture "postId" Int :> DeleteNoContent '[JSON] ()
+  :<|> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
+  :<|> Capture "postId" Int :> "publish" :> Post '[JSON] M.Post
+  :<|> Capture "postId" Int :> DeleteNoContent '[JSON] ()
 
 
-postServer :: Sql.Connection -> Server PostAPI
-postServer conn =
+postServer :: Sql.Connection -> Maybe M.JwtToken ->  Server PostAPI
+postServer conn jwt =
   getAllPosts :<|> getPost :<|> updatePost :<|> publishPost :<|> deletePost
 
   where
-    getAllPosts = liftIO $ S.selectAllPosts conn
-    getPost postId = liftIOMaybeToHandler err404 $ S.selectPost conn postId
-    updatePost jwt post = wrapInJwtCheck jwt $ updateAuthorizedPost conn post
-    publishPost jwt postId = wrapInJwtCheck jwt $ liftIOMaybeToHandler err404 $ S.publishPost conn postId
-    deletePost jwt postId = wrapInJwtCheck jwt $ liftIO $ S.deletePost conn postId
+    getAllPosts = getPostsWithJwt conn jwt
+    getPost postId = getPostWithJwt conn jwt postId
+    updatePost post = jwtOnlyOperation jwt $ updateAuthorizedPost conn post
+    publishPost postId = jwtOnlyOperation jwt $ liftIOMaybeToHandler err404 $ S.publishPost conn postId
+    deletePost postId = jwtOnlyOperation jwt $ liftIO $ S.deletePost conn postId
+
+getPostsWithJwt :: Sql.Connection -> Maybe M.JwtToken -> Handler [M.Post]
+getPostsWithJwt conn jwt = do
+    wrapInJwtCheck jwt onValidJwt onNoJwt where
+      onValidJwt = liftIO allPosts
+      onNoJwt = liftIO publishedPosts
+      allPosts = S.selectAllPosts conn
+      publishedPosts = fmap
+        (\posts -> filter
+          (\post -> fromMaybe False (M.published post))
+          posts)
+        allPosts
+
+getPostWithJwt :: Sql.Connection -> Maybe M.JwtToken -> M.PostId -> Handler M.Post
+getPostWithJwt conn jwt postId = do
+  wrapInJwtCheck jwt onValidJwt onNoJwt where
+    onValidJwt = liftIOMaybeToHandler err404 ioMaybePost
+    onNoJwt = liftIOMaybeToHandler err404 publishedPost
+    publishedPost = fmap getIfPublished ioMaybePost
+    ioMaybePost = S.selectPost conn postId
+    getIfPublished maybePost =
+      case maybePost of
+        Just post ->
+          if fromMaybe False (M.published post)
+            then Just post
+            else Nothing
+        Nothing -> Nothing
 
 
-wrapInJwtCheck :: Maybe String -> Handler a -> Handler a
-wrapInJwtCheck jwt callback =
+jwtOnlyOperation :: Maybe M.JwtToken -> Handler a -> Handler a
+jwtOnlyOperation jwt onValidJwt =
+    wrapInJwtCheck jwt onValidJwt onNoJwt where
+      onNoJwt = throwError err401 { errBody = "Please provide JWT token in header." }
+
+wrapInJwtCheck :: Maybe M.JwtToken -> Handler a -> Handler a -> Handler a
+wrapInJwtCheck jwt onValidJwt onNoJwt = do
   case jwt of
     Just jwtToken -> do
       jwtSecret <- liftIO $ lookupEnv "JWT_SECRET"
       let secret = fromMaybe defaultJwtSecret jwtSecret in do
         valid <- liftIO $ verifyJwt secret jwtToken
         if valid
-          then callback
+          then onValidJwt
           else throwError err401 { errBody = "JWT token has expired or not valid." }
-    Nothing -> throwError err401 { errBody = "Please provide JWT token in header." }
-
+    Nothing -> onNoJwt
 
 updateAuthorizedPost :: Sql.Connection -> M.Post -> Handler M.Post
 updateAuthorizedPost conn post = liftIOMaybeToHandler err404 $
@@ -119,7 +151,7 @@ liftIOMaybeToHandler err x = do
 
 type API =
        "jwt" :> JwtAPI
-  :<|> "post" :> PostAPI
+  :<|> "post" :> Header "jwt" String :> PostAPI
 
 combinedServer :: Sql.Connection -> Server API
 combinedServer conn =
