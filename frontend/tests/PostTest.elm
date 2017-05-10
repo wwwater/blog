@@ -24,6 +24,12 @@ all =
                     |> Query.fromHtml
                     |> Query.find [ class "glyphicon-pencil" ]
                     |> Query.has [ tag "span" ]
+            , test "a post displays 'publish' button for drafts when supplied with JWT" <|
+                \() ->
+                    Post.view (testModel "") (Just "")
+                    |> Query.fromHtml
+                    |> Query.find [ class "glyphicon-globe" ]
+                    |> Query.has [ tag "span" ]
             , test "a post displays 'delete' button when supplied with JWT" <|
                 \() ->
                     Post.view (testModel "") (Just "")

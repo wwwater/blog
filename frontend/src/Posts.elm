@@ -37,9 +37,9 @@ init =
     Model [] []
 
 
-mountCmd : Cmd Msg
-mountCmd =
-    ServerApi.getPosts HandlePostsRetrieved
+mountCmd : Maybe Jwt -> Cmd Msg
+mountCmd maybeJwt =
+    ServerApi.getPosts maybeJwt HandlePostsRetrieved
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

@@ -33,6 +33,7 @@ type alias Model =
 type Msg
     = HandlePostRetrieved (Result Http.Error Post)
     | GoToEditPost Int
+    | PublishPost Jwt
     | DeletePostOnServer Jwt
     | HandlePostDeleted (Result Http.Error String)
 
@@ -42,9 +43,9 @@ init =
     Model Nothing Nothing
 
 
-mountCmd : Int -> Cmd Msg
-mountCmd id =
-    ServerApi.getPost id HandlePostRetrieved
+mountCmd : Int -> Maybe Jwt -> Cmd Msg
+mountCmd id maybeJwt =
+    ServerApi.getPost id maybeJwt HandlePostRetrieved
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
@@ -86,6 +87,33 @@ update action model =
                             )
                         Nothing -> onlyUpdateModel model
                 Nothing -> onlyUpdateModel model
+
+        PublishPost jwt ->
+            case model.post of
+                Just post ->
+                    case post.id of
+                        Just id ->
+                            ( model
+                            , ServerApi.publishPost id jwt HandlePostRetrieved
+                            , Global.None
+                            )
+                        Nothing -> onlyUpdateModel model
+                Nothing -> onlyUpdateModel model
+
+
+
+renderPublishIcon : Jwt -> Maybe Bool -> Html Msg
+renderPublishIcon jwt maybePublished =
+    let published = Maybe.withDefault False maybePublished in
+        if published
+            then span [] []
+            else
+                span
+                    [ iconStyle
+                    , class "glyphicon glyphicon-globe"
+                    , title "Publish post"
+                    , onClick (PublishPost jwt)
+                    ] []
 
 
 
@@ -129,6 +157,7 @@ view model jwt =
                                             , title "Edit Post"
                                             , onClick (GoToEditPost (Maybe.withDefault 0 post.id))
                                             ] []
+                                        , renderPublishIcon jwt post.published
                                         , span
                                             [ iconStyle
                                             , class "glyphicon glyphicon-trash"

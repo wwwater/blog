@@ -46,6 +46,7 @@ emptyPost = { id = Nothing
             , title = Nothing
             , content = Nothing
             , createdAt = Nothing
+            , published = Nothing
             }
 
 init : Model
@@ -56,11 +57,11 @@ init =
         Nothing
 
 
-mountCmd : Maybe Int -> Cmd Msg
-mountCmd id =
+mountCmd : Maybe Int -> Maybe Jwt -> Cmd Msg
+mountCmd id maybeJwt =
     case id of
         Just postId ->
-            ServerApi.getPost postId HandlePostRetrieved
+            ServerApi.getPost postId maybeJwt HandlePostRetrieved
         Nothing -> Cmd.none
 
 

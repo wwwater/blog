@@ -132,17 +132,18 @@ urlUpdate loc model =
 
         Just (PostsPage as route) ->
             { model | route = route }
-                ! [ Cmd.map PostsMsg Posts.mountCmd ]
+                ! [ Cmd.map PostsMsg <| Posts.mountCmd model.jwt]
 
         Just ((PostPage postId) as route) ->
             { model | route = route, postModel = Post.init }
-                ! [ Cmd.map PostMsg <| Post.mountCmd postId ]
+                ! [ Cmd.map PostMsg <| Post.mountCmd postId model.jwt]
 
         Just ((EditPostPage postId) as route) ->
             case model.jwt of
                 Just jwt ->
                     { model | route = route }
-                        ! [ Cmd.map EditPostMsg <| EditPost.mountCmd (Just postId) ]
+                        ! [ Cmd.map EditPostMsg <|
+                            EditPost.mountCmd (Just postId) model.jwt ]
                 Nothing ->
                     model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 
@@ -162,7 +163,7 @@ urlUpdate loc model =
                                 else { model |
                                     route = route,
                                     editPostModel = { editPostModel | error = Nothing } }
-                    in mdl ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing ]
+                    in mdl ! [ Cmd.map EditPostMsg <| EditPost.mountCmd Nothing Nothing ]
                 Nothing ->
                     model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 

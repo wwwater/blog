@@ -9,6 +9,7 @@ type alias Post =
     , title : Maybe String
     , content : Maybe String
     , createdAt : Maybe Int
+    , published : Maybe Bool
     }
 
 type alias Credentials =
@@ -24,14 +25,35 @@ baseUrl =
     "http://localhost:8081"
 
 
-getPosts : (Result Http.Error (List Post) -> msg) -> Cmd msg
-getPosts msg =
-    Http.get (baseUrl ++ "/post/") postsDecoder
+getPosts : Maybe Jwt -> (Result Http.Error (List Post) -> msg) -> Cmd msg
+getPosts maybeJwt msg =
+    let _ = Debug.log "maybeJwt" maybeJwt in
+    Http.request
+        { method = "GET"
+        , headers = case maybeJwt of
+            Just jwt -> [ Http.header "jwt" jwt ]
+            Nothing -> []
+        , url = baseUrl ++ "/post/"
+        , body = Http.emptyBody
+        , expect = Http.expectJson postsDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
         |> Http.send msg
 
-getPost : Int -> (Result Http.Error Post -> msg) -> Cmd msg
-getPost id msg =
-    Http.get (baseUrl ++ "/post/" ++ toString id) postDecoder
+getPost : Int -> Maybe Jwt -> (Result Http.Error Post -> msg) -> Cmd msg
+getPost id maybeJwt msg =
+    Http.request
+        { method = "GET"
+        , headers = case maybeJwt of
+            Just jwt -> [ Http.header "jwt" jwt ]
+            Nothing -> []
+        , url = baseUrl ++ "/post/" ++ toString id
+        , body = Http.emptyBody
+        , expect = Http.expectJson postDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
         |> Http.send msg
 
 getJwt : Credentials -> (Result Http.Error Jwt -> msg) -> Cmd msg
@@ -48,6 +70,19 @@ updatePost post jwt msg =
         , headers = [ Http.header "jwt" jwt ]
         , url = baseUrl ++ "/post/"
         , body = Http.stringBody "application/json" <| encodePost post
+        , expect = Http.expectJson postDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send msg
+
+publishPost : Int -> Jwt -> (Result Http.Error Post -> msg) -> Cmd msg
+publishPost postId jwt msg =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "jwt" jwt ]
+        , url = baseUrl ++ "/post/" ++ toString postId ++ "/publish"
+        , body = Http.emptyBody
         , expect = Http.expectJson postDecoder
         , timeout = Nothing
         , withCredentials = False
@@ -73,11 +108,12 @@ postsDecoder =
 
 postDecoder : JsonD.Decoder Post
 postDecoder =
-    JsonD.map4 Post
+    JsonD.map5 Post
         (JsonD.field "postId" (JsonD.maybe JsonD.int))
         (JsonD.field "postTitle" (JsonD.maybe JsonD.string))
         (JsonD.field "postContent" (JsonD.maybe JsonD.string))
         (JsonD.field "createdAt" (JsonD.maybe JsonD.int))
+        (JsonD.field "published" (JsonD.maybe JsonD.bool))
 
 encodePost : Post -> String
 encodePost post =
