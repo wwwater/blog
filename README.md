@@ -11,10 +11,12 @@ Currently hosted on https://cyclinginthewind.com/
 #### Backend
 
 `stack clean; stack build; stack exec cyclinginthewind`
+
 `stack test --coverage --ghc-options "-fforce-recomp"`
 
 
 #### Frontend
 
 `npm run dev`
+
 `elm test`
