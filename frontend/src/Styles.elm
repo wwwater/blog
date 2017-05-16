@@ -38,3 +38,11 @@ formStyle = style [
     , ("border-radius", "3px")
     , ("border", "none")
     ]
+
+errorStyle : Attribute msg
+errorStyle = style [
+    ("color", "#fff")
+    , ("padding", "32px")
+    , ("width", "100vw")
+    , ("text-align", "center")
+    ]

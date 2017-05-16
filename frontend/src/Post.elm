@@ -126,12 +126,7 @@ view model jwt =
                 ] ]
         [ case model.error of
             Just error ->
-                h2 [ style [ ("color", "#fff")
-                            , ("padding", "32px")
-                            , ("width", "100vw")
-                            , ("text-align", "center")
-                            ] ]
-                    [ text error ]
+                h2 [ errorStyle ] [ text error ]
             Nothing ->
                 case model.post of
                     Just post ->

@@ -19,11 +19,14 @@ import Styles               exposing (..)
 import Util                 exposing ( formatCreationDate
                                      , renderPostContent
                                      )
+import Global               exposing ( Msg(..)
+                                     , handleServerErrorForPost
+                                     , onlyUpdateModel )
 
 
 type alias Model =
     { posts : List Post
-    , errors : List String
+    , error : Maybe String
     }
 
 
@@ -34,7 +37,7 @@ type Msg
 
 init : Model
 init =
-    Model [] []
+    Model [] Nothing
 
 
 mountCmd : Maybe Jwt -> Cmd Msg
@@ -42,24 +45,18 @@ mountCmd maybeJwt =
     ServerApi.getPosts maybeJwt HandlePostsRetrieved
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
 update action model =
     case action of
 
         HandlePostsRetrieved res ->
             case res of
                 Result.Ok posts ->
-                    ( { model | posts = posts }
-                    , Cmd.none
-                    )
+                    onlyUpdateModel { model | posts = posts, error = Nothing }
 
-                Result.Err err ->
-                    let _ = Debug.log "Error retrieving posts" err
-                    in
-                        (model, Cmd.none)
+                Result.Err err -> handleServerErrorForPost model err
 
-        GoToPost id -> (model, Routes.navigate (Routes.PostPage id))
-
+        GoToPost id -> (model, Routes.navigate (Routes.PostPage id), Global.None)
 
 
 
@@ -71,7 +68,12 @@ view model =
         , ("flex-direction", "column")
         , ("align-items", "center")
         , ("flex-grow", "1") ] ]
-        (List.map postPanel model.posts)
+        <|
+        case model.error of
+          Just error ->
+              [ h2 [ errorStyle ] [ text error ] ]
+          Nothing ->
+              (List.map postPanel model.posts)
 
 
 postTitle : Maybe String -> String

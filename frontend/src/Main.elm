@@ -15,14 +15,15 @@ import Routes           exposing (..)
 import Global           exposing (Msg(..))
 
 port save : String -> Cmd msg
-port doload : () -> Cmd msg
-port load : (String -> msg) -> Sub msg
 port remove : () -> Cmd msg
 
 
-main : Program Never Model Msg
+type alias Flags = { jwt : String }
+
+
+main : Program Flags Model Msg
 main =
-    Navigation.program UrlChange
+    Navigation.programWithFlags UrlChange
         { init = init
         , view = view
         , update = update
@@ -48,25 +49,22 @@ type Msg
     | MenuMsg Menu.Msg
     | Navigate String
     | UrlChange Navigation.Location
-    | Load String
     | GlobalMsg Global.Msg
 
 
-initialModel : Model
-initialModel =
+initialModel : Flags -> Model
+initialModel flags =
     { route = PostsPage
     , postsModel = Posts.init
     , postModel = Post.init
     , editPostModel = EditPost.init
     , loginModel = Login.init
-    , jwt = Nothing
+    , jwt = if flags.jwt /= "" then Just flags.jwt else Nothing
     }
 
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init loc =
-    let (mdl, cmd) = update (UrlChange loc) initialModel
-    in (mdl, Cmd.batch[ cmd, doload () ])
+init : Flags -> Navigation.Location -> ( Model, Cmd Msg )
+init flags loc = update (UrlChange loc) <| initialModel flags
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -74,8 +72,9 @@ update msg model =
     case msg of
 
         PostsMsg m ->
-            let ( subMdl, subCmd ) = Posts.update m model.postsModel
-            in { model | postsModel = subMdl } ! [ Cmd.map PostsMsg subCmd ]
+            let ( subMdl, subCmd, globalMsg ) = Posts.update m model.postsModel
+                ( mdl, cmd ) = update (GlobalMsg globalMsg) { model | postsModel = subMdl }
+            in mdl ! [ Cmd.map PostsMsg subCmd, cmd ]
 
         PostMsg m ->
             let ( subMdl, subCmd, globalMsg ) = Post.update m model.postModel
@@ -104,10 +103,6 @@ update msg model =
         Navigate url ->
             model ! [ Navigation.newUrl url ]
 
-        Load jwt ->
-            let _ = Debug.log "Loaded jwt from local storage" jwt in
-            { model | jwt = Just jwt } ! []
-
         GlobalMsg m ->
             case m of
                 None -> model ! []
@@ -117,11 +112,8 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel
-            (Maybe.withDefault "" model.jwt))
-        , load Load
-        ]
+    Sub.map EditPostMsg (EditPost.subscriptions model.editPostModel
+        (Maybe.withDefault "" model.jwt))
 
 
 urlUpdate : Navigation.Location -> Model -> ( Model, Cmd Msg )

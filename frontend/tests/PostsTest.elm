@@ -14,29 +14,29 @@ all =
         [ describe "testing HTML"
             [ test "a post has an 'empty' title" <|
                 \() ->
-                    Posts.view (Posts.Model [testPostEmpty] [])
+                    Posts.view (Posts.Model [testPostEmpty] Nothing)
                     |> Query.fromHtml
                     |> Query.find [ tag "h2" ]
                     |> Query.has [ text "<no title>" ]
             , test "a post displays title" <|
                 \() ->
-                    Posts.view (Posts.Model [testPost ""] [])
+                    Posts.view (Posts.Model [testPost ""] Nothing)
                     |> Query.fromHtml
                     |> Query.has [ text "Nice" ]
             , test "a post displays content" <|
                 \() ->
-                    Posts.view (Posts.Model [testPost "sun and wind"] [])
+                    Posts.view (Posts.Model [testPost "sun and wind"] Nothing)
                     |> Query.fromHtml
                     |> Query.has [ text "sun" ]
             , test "a post displays creating time" <|
                 \() ->
-                    Posts.view (Posts.Model [testPost ""] [])
+                    Posts.view (Posts.Model [testPost ""] Nothing)
                     |> Query.fromHtml
                     |> Query.has [ text "14 Apr 2017" ]
             , test "a post displays http link as a link" <|
                 \() ->
                     Posts.view (Posts.Model
-                        [testPost "text https://test.com more text"] [])
+                        [testPost "text https://test.com more text"] Nothing)
                     |> Query.fromHtml
                     |> Query.has [ tag "a" ]
             ]

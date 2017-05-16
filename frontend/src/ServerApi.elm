@@ -27,7 +27,6 @@ baseUrl =
 
 getPosts : Maybe Jwt -> (Result Http.Error (List Post) -> msg) -> Cmd msg
 getPosts maybeJwt msg =
-    let _ = Debug.log "maybeJwt" maybeJwt in
     Http.request
         { method = "GET"
         , headers = case maybeJwt of
