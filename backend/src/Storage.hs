@@ -45,8 +45,11 @@ insertPost conn post = do
     "INSERT INTO post (title, content, created, published) VALUES (:title, :content, :created, 0) "
     [":title" := (M.postTitle post), ":content" := (M.postContent post), ":created" := timeUtc]
   rawId <- lastInsertRowId conn
-  let newPost = post { M.postId = Just $ fromIntegral rawId }
-  return (Just newPost)
+  insertedPost <- (Sql.query conn "SELECT id, title, content, created, published FROM post WHERE id = ?"
+                  (Sql.Only $ rawId) :: IO [M.Post])
+  case (length insertedPost) of
+      0 -> return Nothing
+      _ -> return $ Just $ head insertedPost
 
 updatePost :: Sql.Connection -> M.Post -> IO (Maybe M.Post)
 updatePost conn post = do
