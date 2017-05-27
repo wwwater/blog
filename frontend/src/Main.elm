@@ -123,7 +123,7 @@ urlUpdate loc model =
             model ! [ Navigation.modifyUrl (Routes.encode model.route) ]
 
         Just (PostsPage as route) ->
-            { model | route = route }
+            { model | route = route, postsModel = Posts.init }
                 ! [ Cmd.map PostsMsg <| Posts.mountCmd model.jwt]
 
         Just ((PostPage postId) as route) ->
@@ -180,7 +180,7 @@ contentView : Model -> Html Msg
 contentView model =
     case model.route of
         PostsPage ->
-            Html.map PostsMsg <| Posts.view model.postsModel
+            Html.map PostsMsg <| Posts.view model.postsModel model.jwt
 
         PostPage id ->
             Html.map PostMsg <| Post.view model.postModel model.jwt

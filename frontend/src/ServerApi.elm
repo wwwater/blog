@@ -25,14 +25,15 @@ baseUrl =
     "http://localhost:8081"
 
 
-getPosts : Maybe Jwt -> (Result Http.Error (List Post) -> msg) -> Cmd msg
-getPosts maybeJwt msg =
+getPosts : Maybe Int -> Maybe Jwt -> (Result Http.Error (List Post) -> msg) -> Cmd msg
+getPosts maybeOffset maybeJwt msg =
     Http.request
         { method = "GET"
         , headers = case maybeJwt of
             Just jwt -> [ Http.header "jwt" jwt ]
             Nothing -> []
-        , url = baseUrl ++ "/post/"
+        , url = baseUrl ++ "/post?offset=" ++
+            (toString (Maybe.withDefault 0 maybeOffset))
         , body = Http.emptyBody
         , expect = Http.expectJson postsDecoder
         , timeout = Nothing

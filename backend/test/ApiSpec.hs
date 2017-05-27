@@ -51,6 +51,15 @@ spec = beforeAll testConnect $
           "[{\"createdAt\":null,\"published\":true,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
           {matchStatus = 200}
 
+    it "retrieves published posts with offset" $ \connection -> do
+      Storage.createSchema connection
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (1, 'Title', 'Content', 1)"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (2, 'Title', 'Content', 1)"
+      withApplication (App.app connection) $ do
+        get "/post?offset=1" `shouldRespondWith`
+          "[{\"createdAt\":null,\"published\":true,\"postContent\":\"Content\",\"postId\":2,\"postTitle\":\"Title\"}]"
+          {matchStatus = 200}
+
     it "retrieves a post by id" $ \connection -> do
       Storage.createSchema connection
       Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (3, 'Title', 'Content', 1)"
@@ -116,7 +125,7 @@ spec = beforeAll testConnect $
     after (\connection -> Sql.execute_ connection "DROP TABLE user") $ do
 
     it "can retrieve unpublished posts using JWT" $ \connection -> do
-      Sql.execute_ connection "INSERT INTO post (id, title, content) VALUES (1, 'Title', 'Content')"
+      Sql.execute_ connection "INSERT INTO post (id, title, content, published) VALUES (1, 'Title', 'Content', 0)"
       addTestUserToDB connection
       withApplication (App.app connection) $ do
         response <- makeJwtRequest
@@ -125,7 +134,7 @@ spec = beforeAll testConnect $
                 [("Content-Type", "application/json"), ("jwt", getJwtFromResponse response)]
                 ""
           `shouldRespondWith`
-          "[{\"createdAt\":null,\"published\":null,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
+          "[{\"createdAt\":null,\"published\":false,\"postContent\":\"Content\",\"postId\":1,\"postTitle\":\"Title\"}]"
           {matchStatus = 200}
 
     it "can retrieve unpublished post using JWT" $ \connection -> do

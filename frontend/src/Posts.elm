@@ -9,6 +9,7 @@ import Html                 exposing (..)
 import Html.Attributes      exposing ( class
                                      , href
                                      , style
+                                     , title
                                      )
 import Html.Events          exposing ( onClick )
 import Http
@@ -27,22 +28,25 @@ import Global               exposing ( Msg(..)
 type alias Model =
     { posts : List Post
     , error : Maybe String
+    , countLoadedPosts : Int
+    , showMorePostsButton : Bool
     }
 
 
 type Msg
     = HandlePostsRetrieved (Result Http.Error (List Post))
     | GoToPost Int
+    | RetrieveMorePosts (Maybe Jwt)
 
 
 init : Model
 init =
-    Model [] Nothing
+    Model [] Nothing 0 True
 
 
 mountCmd : Maybe Jwt -> Cmd Msg
 mountCmd maybeJwt =
-    ServerApi.getPosts maybeJwt HandlePostsRetrieved
+    ServerApi.getPosts Nothing maybeJwt HandlePostsRetrieved
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Global.Msg )
@@ -52,17 +56,28 @@ update action model =
         HandlePostsRetrieved res ->
             case res of
                 Result.Ok posts ->
-                    onlyUpdateModel { model | posts = posts, error = Nothing }
+                    let countNewPosts = List.length posts in
+                    onlyUpdateModel { model |
+                        posts = model.posts ++ posts,
+                        error = Nothing,
+                        countLoadedPosts = model.countLoadedPosts + countNewPosts,
+                        showMorePostsButton = countNewPosts > 0}
 
                 Result.Err err -> handleServerErrorForPost model err
 
         GoToPost id -> (model, Routes.navigate (Routes.PostPage id), Global.None)
 
+        RetrieveMorePosts maybeJwt ->
+            ( model
+            , ServerApi.getPosts (Just model.countLoadedPosts) maybeJwt HandlePostsRetrieved
+            , Global.None
+            )
 
 
 
-view : Model -> Html Msg
-view model =
+
+view : Model -> Maybe Jwt -> Html Msg
+view model maybeJwt =
     div [ style [ ("background-color", "#777")
         , ("display", "flex")
         , ("flex-direction", "column")
@@ -73,7 +88,8 @@ view model =
           Just error ->
               [ h2 [ errorStyle ] [ text error ] ]
           Nothing ->
-              (List.map postPanel model.posts)
+              (List.map postPanel model.posts) ++
+              [morePostsButton model.showMorePostsButton maybeJwt]
 
 
 postTitle : Maybe String -> String
@@ -97,3 +113,17 @@ postPanel post =
                       , ("text-align", "justify") ] ]
             (renderPostContent (Maybe.withDefault "" post.content))
         ]
+
+morePostsButton : Bool -> Maybe Jwt -> Html Msg
+morePostsButton showButton maybeJwt =
+    if showButton
+    then
+        span
+            [ iconStyle
+            , style [ ("margin-bottom", "16px") ]
+            , class "glyphicon glyphicon-option-horizontal"
+            , title "...get more posts"
+            , onClick (RetrieveMorePosts maybeJwt)
+            ] []
+    else
+        span [] []

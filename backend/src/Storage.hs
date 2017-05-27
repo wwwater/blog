@@ -2,6 +2,7 @@
 module Storage where
 
 
+import Data.Maybe               (fromMaybe)
 import Database.SQLite.Simple   as Sql
 import Data.Time.Clock.POSIX    (getPOSIXTime)
 
@@ -26,9 +27,16 @@ createSchema conn = do
 getUtcTime :: IO Integer
 getUtcTime = fmap round getPOSIXTime
 
-selectAllPosts :: Sql.Connection -> IO [M.Post]
-selectAllPosts conn =
-  Sql.query_ conn "SELECT id, title, content, created, published FROM post ORDER BY created DESC" :: IO [M.Post]
+selectAllPosts :: Sql.Connection -> Bool -> Maybe Int -> IO [M.Post]
+selectAllPosts conn onlyPublished maybeOffset =
+  Sql.queryNamed conn
+    "SELECT id, title, content, created, published FROM post \
+    \WHERE published >= :published ORDER BY created DESC LIMIT 10 OFFSET :offset"
+    [
+      ":published" := ((if onlyPublished then 1 else 0) :: Int),
+      ":offset" := fromMaybe 0 maybeOffset
+    ]
+    :: IO [M.Post]
 
 selectPost :: Sql.Connection -> Int -> IO (Maybe M.Post)
 selectPost conn postId = do

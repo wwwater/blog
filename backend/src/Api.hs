@@ -15,6 +15,7 @@ import Servant.API.ReqBody                  (ReqBody)
 import Servant.API.Capture                  (Capture)
 import Servant.API.ContentTypes             (JSON)
 import Servant.API.Header                   (Header)
+import Servant.API.QueryParam               (QueryParam)
 import Servant.Server.Internal.ServantErr   (ServantErr, err401, err404, errBody)
 import Control.Monad.IO.Class               (liftIO)
 import Database.SQLite.Simple as Sql
@@ -23,7 +24,6 @@ import Data.ByteString.Char8                (pack)
 import Data.Text                            (unpack)
 import System.Environment                   (lookupEnv)
 import Data.Maybe                           (fromMaybe)
-import Data.List                            (filter)
 
 import Jwt                                  (createJwt, verifyJwt)
 import qualified Model as M
@@ -64,7 +64,7 @@ issueJwt password passwordHashIO = do
 
 
 type PostAPI =
-       Get '[JSON] [M.Post]
+       QueryParam "offset" Int :> Get '[JSON] [M.Post]
   :<|> Capture "postId" Int :> Get '[JSON] M.Post
   :<|> ReqBody '[JSON] M.Post :> Post '[JSON] M.Post
   :<|> Capture "postId" Int :> "publish" :> Post '[JSON] M.Post
@@ -76,23 +76,18 @@ postServer conn jwt =
   getAllPosts :<|> getPost :<|> updatePost :<|> publishPost :<|> deletePost
 
   where
-    getAllPosts = getPostsWithJwt conn jwt
+    getAllPosts offset = getPostsWithJwt conn jwt offset
     getPost postId = getPostWithJwt conn jwt postId
     updatePost post = jwtOnlyOperation jwt $ updateAuthorizedPost conn post
     publishPost postId = jwtOnlyOperation jwt $ liftIOMaybeToHandler err404 $ S.publishPost conn postId
     deletePost postId = jwtOnlyOperation jwt $ liftIO $ S.deletePost conn postId
 
-getPostsWithJwt :: Sql.Connection -> Maybe M.JwtToken -> Handler [M.Post]
-getPostsWithJwt conn jwt = do
+getPostsWithJwt :: Sql.Connection -> Maybe M.JwtToken -> Maybe Int -> Handler [M.Post]
+getPostsWithJwt conn jwt offset = do
     wrapInJwtCheck jwt onValidJwt onNoJwt where
-      onValidJwt = liftIO allPosts
-      onNoJwt = liftIO publishedPosts
-      allPosts = S.selectAllPosts conn
-      publishedPosts = fmap
-        (\posts -> filter
-          (\post -> fromMaybe False (M.published post))
-          posts)
-        allPosts
+      onValidJwt = liftIO $ selectPosts False
+      onNoJwt = liftIO $ selectPosts True
+      selectPosts onlyPublished = S.selectAllPosts conn onlyPublished offset
 
 getPostWithJwt :: Sql.Connection -> Maybe M.JwtToken -> M.PostId -> Handler M.Post
 getPostWithJwt conn jwt postId = do
