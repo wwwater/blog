@@ -2,13 +2,23 @@
 module Main (main) where
 
 
-import Network.Wai
-import Network.Wai.Handler.Warp
+import Control.Exception                    (bracket)
+import Database.SQLite.Simple               as Sql
+import Network.Wai                          (Middleware)
+import Network.Wai.Handler.Warp             (run)
+import Network.Wai.Middleware.Cors          (cors,
+                                            CorsResourcePolicy (..),
+                                            corsOrigins,
+                                            corsMethods,
+                                            corsRequestHeaders,
+                                            corsExposedHeaders,
+                                            corsMaxAge,
+                                            corsVaryOrigin,
+                                            corsRequireOrigin,
+                                            corsIgnoreFailures,
+                                            simpleHeaders)
+import Network.Wai.Middleware.RequestLogger (logStdout)
 import Servant
-import Network.Wai.Middleware.Cors
-import Network.Wai.Middleware.RequestLogger ( logStdoutDev )
-import Control.Exception (bracket)
-import Database.SQLite.Simple as Sql
 
 import qualified App
 import qualified Storage
@@ -49,4 +59,4 @@ main :: IO ()
 main = do
   withTestConnection $ \conn ->  do
     Storage.createSchema conn
-    run 8081 $ logStdoutDev $ blogCors $ App.app conn
+    run 8081 $ logStdout $ blogCors $ App.app conn
