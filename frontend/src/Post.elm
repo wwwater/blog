@@ -135,10 +135,9 @@ view model jwt =
                                 [ text <| formatCreationDate post.createdAt ]
                             , h2 [ style [ ("margin-bottom", "32px") ] ]
                                 [ text (Maybe.withDefault "" post.title) ]
-                            , div [ style [ ("flex-grow", "1")
-                                          , ("text-align", "justify")
-                                          , ("white-space", "pre-wrap")
-                                          ] ]
+                            , div [ postContentStyle
+                                  , style [ ("flex-grow", "1") ]
+                                  ]
                                 (renderPostContent (Maybe.withDefault "" post.content))
                             , div [ style [ ("font-size", "18px")
                                           , ("align-self", "flex-end")

@@ -109,8 +109,7 @@ postPanel post =
         , h2 [ style [ ("margin-top", "8px")
                      , ("margin-bottom", "32px") ] ]
             [ text (postTitle post.title) ]
-        , div [ style [ ("white-space", "pre-wrap")
-                      , ("text-align", "justify") ] ]
+        , div [ postContentStyle ]
             (renderPostContent (Maybe.withDefault "" post.content))
         ]
 

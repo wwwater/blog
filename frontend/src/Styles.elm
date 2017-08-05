@@ -31,6 +31,11 @@ postStyle = style [
     , ("color", "#ddd")
     ]
 
+postContentStyle : Attribute msg
+postContentStyle = style [
+      ("white-space", "pre-wrap")
+    ]
+
 formStyle : Attribute msg
 formStyle = style [
     ("box-shadow", "5px 5px 10px 1px #333")
