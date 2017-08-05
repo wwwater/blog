@@ -41,7 +41,7 @@ type Msg
 
 init : Model
 init =
-    Model [] Nothing 0 True
+    Model [] Nothing 0 False
 
 
 mountCmd : Maybe Jwt -> Cmd Msg
