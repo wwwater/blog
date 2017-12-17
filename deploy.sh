@@ -9,7 +9,7 @@ function deploy_frontend() {
     if [[ $test_passed == "1" ]]
     then
         npm run build
-        sed -i s'|http://localhost:8081|https://cyclinginthewind.com:8083|' dist/index.js
+        sed -i s'|http://localhost:8081|https://cyclinginthewind.com/api|' dist/index.js
         scp -r dist 46.101.142.224:~/cyclinginthewind/frontend/
     else
         echo "Tests failed. Not deploying anything! :)"
@@ -42,7 +42,8 @@ function deploy_backend() {
 
 function backup_database() {
     echo -e "Backup database from server on dropbox\n"
-    scp 46.101.142.224:~/cyclinginthewind/db/blog.db ~/Dropbox/backup/
+    today=`date +"%Y-%m-%d"`
+    scp 46.101.142.224:~/cyclinginthewind/db/blog.db ~/Dropbox/backup/digital_ocean/blog_"$today".db
 }
 
 if [[ $# -eq 0 ]] 
