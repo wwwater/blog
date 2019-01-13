@@ -169,6 +169,7 @@ view : Model -> Html Msg
 view model = div [ style [ ("display", "flex")
                          , ("flex-direction", "column")
                          , ("min-height", "100vh")
+                         , ("font-family", "Ubuntu,Lucida Grande,Lucida Sans Unicode,Lucida Sans,Geneva,Verdana,sans-serif")
                          ] ]
     [ Html.map MenuMsg <| Menu.view model.jwt
     , contentView model
